@@ -5,61 +5,131 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="robots" content="noindex">
 <meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; connect-src wss://broker.hivemq.com:8884 wss://broker.emqx.io:8084 wss://test.mosquitto.org:8081; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="color-scheme" content="light dark">
 <title>Room</title>
+<link id="icon" rel="icon" href="data:,">
 <style>
-:root{--bg:#f4f5f7;--panel:#fff;--ink:#1b1f24;--soft:#5d6670;--line:#d8dce1;--me:#2563eb;--meink:#fff;--them:#e6e9ee;--warn:#fff3cd;--warnink:#5c4600;--ok:#1a9d4b;--bad:#c2410c;--vvh:100dvh}
-@media (prefers-color-scheme:dark){:root{--bg:#0f1114;--panel:#181b20;--ink:#eceff3;--soft:#9aa3ad;--line:#2b3037;--me:#3b82f6;--meink:#fff;--them:#262b32;--warn:#3a3000;--warnink:#ffe9a0;--ok:#4ade80;--bad:#fb923c}}
+:root{--bg:#f3f1ec;--panel:#fbfaf7;--card:#fff;--ink:#191c1b;--soft:#66706c;--line:#e0ddd5;--me:#0f766e;--meink:#fff;--you:#be185d;--them:#e9e6df;--warn:#fdf0c8;--warnink:#5c4600;--ok:#15803d;--bad:#c2410c;--shade:0 12px 32px rgba(20,30,25,.09);--vvh:100dvh}
+@media (prefers-color-scheme:dark){:root{--bg:#0b0e0d;--panel:#111514;--card:#161b1a;--ink:#e9eeec;--soft:#93a09b;--line:#252c2a;--me:#2dd4bf;--meink:#04221e;--you:#f472b6;--them:#1e2523;--warn:#33290a;--warnink:#fde68a;--ok:#4ade80;--bad:#fb923c;--shade:0 12px 32px rgba(0,0,0,.45)}}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:17px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:17px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden;-webkit-text-size-adjust:100%}
 [hidden]{display:none!important}
 input,button,textarea{font:inherit;font-size:16px}
+:focus-visible{outline:2px solid var(--me);outline-offset:2px}
 #join-screen{min-height:var(--vvh);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
-#join-form{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
-h1{margin:0 0 14px;font-size:26px}
-label{display:block;margin:12px 0 4px;font-weight:600}
-input[type=text],input[type=password]{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+#join-form.shake{animation:shake .36s}
+#join:disabled::after{content:'';display:inline-block;width:14px;height:14px;margin-left:10px;vertical-align:-2px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+#join-form{animation:rise .5s cubic-bezier(.2,.8,.2,1);width:100%;max-width:390px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px 24px;box-shadow:var(--shade)}
+.badge{width:52px;height:52px;border-radius:16px;background:var(--me);color:var(--meink);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+h1{margin:0 0 4px;font-size:28px;letter-spacing:-.02em}
+.lead{margin:0 0 6px;color:var(--soft);font-size:15px}
+label{display:block;margin:16px 0 6px;font-weight:600;font-size:15px}
+input[type=text],input[type=password]{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);transition:border-color .15s,box-shadow .15s}
+input[type=text]:focus,input[type=password]:focus{outline:0;border-color:var(--me);box-shadow:0 0 0 3px color-mix(in srgb,var(--me) 22%,transparent)}
 .pw-row{display:flex;gap:8px}
 .pw-row input{flex:1;min-width:0}
-.hint{margin:6px 0 0;color:var(--soft);font-size:15px}
+.hint{margin:8px 0 0;color:var(--soft);font-size:14px}
 .hint.weak{color:var(--bad)}.hint.good{color:var(--ok)}
-.small{margin:14px 0 0;color:var(--soft);font-size:14px;text-align:center}
-button{border:0;border-radius:10px;background:var(--me);color:var(--meink);padding:12px 18px;font-weight:600;cursor:pointer}
-button.quiet{background:transparent;color:var(--ink);border:1px solid var(--line);padding:8px 12px;font-weight:500}
-#join{width:100%;margin-top:16px}
-button:disabled{opacity:.6}
-#chat-screen{height:var(--vvh);display:flex;flex-direction:column;max-width:720px;margin:0 auto;background:var(--panel)}
-header{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));border-bottom:1px solid var(--line)}
+.small{margin:16px 0 0;color:var(--soft);font-size:13px;text-align:center}
+button{border:0;border-radius:12px;background:var(--me);color:var(--meink);padding:13px 18px;font-weight:650;cursor:pointer;transition:transform .08s,opacity .15s}
+button:active{transform:scale(.97)}
+button.quiet{background:transparent;color:var(--ink);border:1px solid var(--line);padding:8px 13px;font-weight:500}
+#join{width:100%;margin-top:20px}
+button:disabled{opacity:.55}
+#chat-screen{animation:fade .35s;position:relative;height:var(--vvh);display:flex;flex-direction:column;max-width:760px;margin:0 auto;background:var(--panel)}
+@media (min-width:800px){#chat-screen{border-left:1px solid var(--line);border-right:1px solid var(--line)}}
+header{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));border-bottom:1px solid var(--line);background:var(--card)}
 header h1{font-size:20px;margin:0}
-.who{flex:1;min-width:0;font-size:14px;color:var(--soft);text-align:right}
+.who{flex:1;min-width:0;font-size:13px;color:var(--soft);text-align:right}
 .who div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--soft);margin-right:5px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--soft);margin-right:6px}
 #peer[data-online=true] .dot{background:var(--ok)}
 #status[data-state=connected] .dot{background:var(--ok)}
 #status[data-state=offline] .dot{background:var(--bad)}
-.note{background:var(--warn);color:var(--warnink);padding:8px 14px;font-size:15px}
-#messages{flex:1;overflow-y:auto;padding:12px 12px 4px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
-.msg{max-width:82%;padding:8px 12px;border-radius:16px;background:var(--them);overflow-wrap:anywhere}
-.msg[data-from=me]{align-self:flex-end;background:var(--me);color:var(--meink)}
-.msg-name{font-size:13px;font-weight:700;opacity:.8}
-.msg-text{white-space:pre-wrap}
-.msg-meta{font-size:12px;opacity:.8;text-align:right}
-#tools{display:flex;justify-content:flex-end;padding:4px 12px;border-bottom:1px solid var(--line)}
-#tools button{padding:4px 10px;font-size:14px}
+#status[data-state=connecting] .dot{animation:pulse 1s infinite}
+.dot{transition:background .3s}
+.note{animation:drop .25s;background:var(--warn);color:var(--warnink);padding:9px 14px;font-size:15px}
+#messages{flex:1;overflow-y:auto;padding:6px 0 10px;display:flex;flex-direction:column;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.msg{--c:var(--you);padding:0 16px;overflow-wrap:anywhere;transition:background .15s}
+.msg[data-from=me]{--c:var(--me)}
+.msg.in{animation:slide .26s cubic-bezier(.2,.8,.2,1)}
+.msg[data-day]::before{content:attr(data-day);display:block;margin:18px 0 0;text-align:center;font-size:11.5px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--soft)}
+.msg-name{margin:12px 0 4px;font-size:12px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--c)}
+.msg[data-from=me] .msg-name{font-size:0}
+.msg[data-from=me] .msg-name::before{content:'Me';font-size:12px}
+.msg[data-from=me]+.msg[data-from=me]:not([data-day]) .msg-name,.msg[data-from=them]+.msg[data-from=them]:not([data-day]) .msg-name{display:none}
+.msg-body{display:flex;align-items:flex-end;gap:10px;border-left:3px solid var(--c);padding:3px 0 3px 11px}
+.msg-text{flex:1;min-width:0;white-space:pre-wrap}
+.msg-meta{flex:none;margin-left:auto;padding-bottom:2px;font-size:11px;color:var(--soft);white-space:nowrap}
+.msg-state{font-weight:600}
+.msg[data-state=opened] .msg-state{color:var(--c)}
+.msg[data-state=opened]:has(~ .msg[data-from=me]) .msg-state{display:none}
+.msg-pic{flex:none;width:260px;max-width:calc(100% - 70px);margin:2px 0;border-radius:14px;overflow:hidden;background:var(--them);display:flex;align-items:center;justify-content:center;padding:0 10px;font-size:13px;color:var(--soft);text-align:center}
+.msg-pic:not([data-ready]){background:linear-gradient(100deg,var(--them) 30%,var(--line) 50%,var(--them) 70%);background-size:300% 100%;animation:shimmer 1.4s linear infinite}
+.msg-pic[data-ready]{padding:0;cursor:zoom-in;transition:transform .15s}
+.msg-pic[data-ready]:active{transform:scale(.97)}
+.msg-pic img{width:100%;height:100%;object-fit:cover;display:block;animation:fade .35s}
+@media (hover:hover){.msg:hover{background:color-mix(in srgb,var(--them) 50%,transparent)}button:hover{filter:brightness(1.07)}}
+@keyframes slide{from{opacity:0;transform:translateX(-12px)}}
+@keyframes pop{from{opacity:0;transform:scale(.6)}}
+@keyframes fade{from{opacity:0}}
+@keyframes zoom{from{opacity:0;transform:scale(.92)}}
+@keyframes drop{from{opacity:0;transform:translateY(-8px)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.98)}}
+@keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+@keyframes pulse{50%{opacity:.25}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes bob{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}
+@keyframes shimmer{from{background-position:100% 0}to{background-position:-100% 0}}
+@keyframes launch{40%{transform:translateY(-9px);opacity:0}41%{transform:translateY(9px);opacity:0}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+#tools{display:flex;justify-content:flex-end;padding:6px 10px 0}
+#tools button{padding:4px 10px;font-size:13px;color:var(--soft);border-color:transparent}
 #clear-ask p{margin:0 0 8px}
 #clear-ask button{margin-right:8px;padding:8px 14px}
 #empty{margin:auto;color:var(--soft);text-align:center;padding:0 12px}
 #empty small{display:block;margin-top:10px;font-size:14px}
-#typing{padding:2px 14px;color:var(--soft);font-size:14px}
-#composer{display:flex;gap:8px;padding:8px 12px;padding-bottom:max(8px,env(safe-area-inset-bottom));border-top:1px solid var(--line)}
-#text{flex:1;min-width:0;padding:12px;border:1px solid var(--line);border-radius:22px;background:var(--bg);color:var(--ink)}
-#send{border-radius:22px}
+#here{flex:none;display:flex;align-items:center;gap:8px;height:0;padding:0 16px;overflow:hidden;transition:height .28s cubic-bezier(.2,.8,.2,1)}
+#here[data-on=true]{height:44px}
+#face{flex:none;width:30px;height:30px;border-radius:50%;background:var(--you);color:var(--card);font-weight:750;font-size:14px;display:flex;align-items:center;justify-content:center;transform:scale(0);transition:transform .4s cubic-bezier(.3,1.6,.5,1)}
+#here[data-on=true] #face{transform:scale(1)}
+#typing{display:flex;align-items:center;gap:4px;padding:10px 12px;border-radius:14px;background:var(--them);animation:pop .22s cubic-bezier(.3,1.6,.5,1)}
+#typing i{width:6px;height:6px;border-radius:50%;background:var(--soft);animation:bob 1s infinite ease-in-out}
+#typing i:nth-of-type(2){animation-delay:.15s}
+#typing i:nth-of-type(3){animation-delay:.3s}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+#composer{display:flex;align-items:center;gap:8px;padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--card)}
+#text{flex:1;min-width:0;padding:12px 16px;border:1px solid var(--line);border-radius:24px;background:var(--bg);color:var(--ink)}
+.round{flex:none;width:46px;height:46px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center}
+#send{transition:transform .25s cubic-bezier(.3,1.6,.5,1),opacity .2s}
+#composer:not([data-has]) #send{opacity:.45;transform:scale(.86)}
+#send.go svg{animation:launch .38s}
+#text{transition:border-color .15s,box-shadow .15s}
+#empty{animation:fade .5s}
+#attach{background:transparent;color:var(--soft);border:1px solid var(--line)}
+#viewer{animation:fade .18s;position:absolute;inset:0;z-index:5;background:rgba(0,0,0,.93);display:flex;flex-direction:column}
+#viewer-img{animation:zoom .24s cubic-bezier(.2,.8,.2,1);flex:1;min-height:0;width:100%;object-fit:contain}
+.viewer-bar{display:flex;gap:10px;justify-content:center;padding:12px;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+.viewer-bar a,.viewer-bar button{background:#fff;color:#111;border-radius:12px;padding:11px 22px;font-weight:650;font-size:16px;text-decoration:none}
+#cover{min-height:var(--vvh);background:var(--panel)}
+.cv-top{display:flex;align-items:center;gap:18px;padding:14px 20px;border-bottom:1px solid var(--line);color:var(--soft);font-size:15px}
+.cv-site{font-weight:700;font-size:19px;color:var(--ink);margin-right:auto;user-select:none;-webkit-user-select:none;cursor:default}
+.cv-body{max-width:680px;margin:0 auto;padding:26px 20px 40px}
+.cv-tag{margin:0 0 6px;color:var(--soft);font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+.cv-body h2{margin:0 0 12px;font-size:30px;line-height:1.2}
+.cv-body li{margin:8px 0}
+.cv-btn{display:inline-block;margin-top:10px;padding:12px 20px;border-radius:8px;background:var(--ink);color:var(--panel);font-weight:600}
+.cv-foot{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);color:var(--soft);font-size:13px}
 </style>
 </head>
 <body>
+<main id="cover" hidden></main>
 <main id="join-screen">
   <form id="join-form" autocomplete="off">
+    <div class="badge"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg></div>
     <h1>Room</h1>
+    <p class="lead">A private chat for two. Locked with a password only you two know.</p>
     <label for="name">Your name</label>
     <input id="name" type="text" maxlength="30" autocomplete="off" placeholder="Your name">
     <label for="password">Password</label>
@@ -86,17 +156,27 @@ header h1{font-size:20px;margin:0}
   <div id="notice" class="note" hidden>No connection. Your messages will go out when it is back.</div>
   <div id="clock-note" class="note" hidden>The time on one phone looks wrong. Set the time to automatic on both phones.</div>
   <div id="save-note" class="note" hidden>Your chat cannot be saved on this phone. You can still chat.</div>
+  <div id="pic-note" class="note" hidden>That photo could not be sent. Try another one.</div>
   <div id="tools"><button id="clear" type="button" class="quiet">Delete chat</button></div>
   <div id="clear-ask" class="note" hidden>
     <p>Delete this chat for both of you? It cannot be undone.</p>
     <button id="clear-yes" type="button">Yes, delete it</button><button id="clear-no" type="button" class="quiet">No, keep it</button>
   </div>
   <div id="messages" aria-live="polite"><p id="empty">No messages yet. Say hello!<small>Is the other person here, but you cannot see them? Then one password is different. Tap Leave and type it again.</small></p></div>
-  <div id="typing" hidden>The other person is typing...</div>
+  <div id="here" data-on="false">
+    <span id="face" aria-hidden="true"></span>
+    <div id="typing" hidden><span class="sr">The other person is typing...</span><i></i><i></i><i></i></div>
+  </div>
   <form id="composer" autocomplete="off">
+    <button id="attach" type="button" class="round" aria-label="Send a photo" title="Send a photo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg></button>
+    <input id="file" type="file" accept="image/*" hidden>
     <input id="text" type="text" maxlength="2000" enterkeyhint="send" autocomplete="off" placeholder="Type a message">
-    <button id="send" type="submit">Send</button>
+    <button id="send" type="submit" class="round" aria-label="Send" title="Send"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
   </form>
+  <div id="viewer" hidden>
+    <img id="viewer-img" alt="Photo">
+    <div class="viewer-bar"><a id="viewer-save" download="photo.jpg">Save</a><button id="viewer-close" type="button">Close</button></div>
+  </div>
 </section>
 <script>
 'use strict';
@@ -109,9 +189,13 @@ header h1{font-size:20px;margin:0}
   - Every packet on the wire is: 12 random bytes (nonce) + AES-GCM(JSON, padded with spaces
     to 1024, 2048, 4096... bytes, 16384 at most). The relays only see this. Padding hides how long
     a message is.
+  - Opened: the "got it" packet also says o: 1 when the message is on the screen of the other
+    person (the page is in view). Then it shows "Opened", not "Delivered". Old pages ignore o.
   - JSON fields: v (version), s (sender id, random per page), at (sender clock when sealed), t (type):
-      m  message   {id, ts, n: name, x: text, g}
-      a  got it    {i: [ids]}
+      m  message   {id, ts, n: name, x: text, g, im}   im = {n, z, w, h} when it is a photo
+      i  photo     {g, id, k, d}   piece k of the photo of message id (9000 bytes, base64)
+      q  ask       {g, id, k: [pieces]}   "send me these pieces of that photo"
+      a  got it    {i: [ids], o}
       p  here      {n: name, h: [recent ids], g, c}   every 8 s; the author re-sends what is missing
       k  my list   {g, l: [[bucket, after id, up to id, [ids]]]}
       M  bundle    {g, m: [{id, ts, n, x, w}]}   w = 1: the phone that passes it on wrote it
@@ -136,12 +220,26 @@ header h1{font-size:20px;margin:0}
     [count, xor of id hashes]. When a bucket differs, the phone sends 'k' (the ids it holds in that
     bucket, in id ranges). The other phone answers with 'M' bundles holding only what is missing.
     Packets leave through a queue, about 3 a second. Nothing is sent again once the chats match.
+  - Photos: the phone that sends one draws it again as a JPEG (1280 px at most, smaller when the
+    file is still big). That also drops what the camera wrote into the file, such as the place.
+    The message itself is small: the text "Photo" plus im (pieces, bytes, width, height), so it is
+    synced like any message, and an old page shows the word "Photo". The bytes travel in 'i' packets.
+    A phone that misses pieces asks for them with 'q'. A photo is saved as one more encrypted record.
+    A received photo is only ever shown as an image/jpeg blob in an <img>.
+  - Safety: a content security policy (no outside scripts, only the three relays), no framing,
+    a second tap before a short password is used, and the cover after 10 minutes without a touch.
+  - Cover: when the page is hidden or the window loses focus while in a chat, the chat is swapped
+    for a harmless-looking page (picked at random, with its own tab title and icon) and the page
+    reloads, which signs you out: the key only lives in memory. The cover stays, also over a reload,
+    until the name at its top left is tapped three times. Then the sign-in form is back.
 */
 (function () {
   var $ = function (s) { return document.querySelector(s); };
   var RELAYS = ['wss://broker.hivemq.com:8884/mqtt', 'wss://broker.emqx.io:8084/mqtt', 'wss://test.mosquitto.org:8081/mqtt'];
   var SALT = 'room-chat-v1-salt', ROUNDS = 250000, PAD = 1024, KEEP = 40, BEAT = 8000, PEER_TTL = 24000, TYPING_TTL = 6000, SKEW = 600000;
+  var CHUNK = 9000, PIC_AIM = 200000, PIC_MAX = 600000, IDLE = 600000;
   var enc = new TextEncoder(), dec = new TextDecoder();
+  if (window.top !== window.self) { document.body.textContent = ''; return; }   // never run inside another page
 
   /* ---------- state (memory only) ---------- */
   var me = { name: '', sid: rid(16) };
@@ -155,7 +253,71 @@ header h1{font-size:20px;margin:0}
   var slot = '', db = null, chain = null, dirty = [], saveTimer = 0, epoch = 0, noteShown = false;
   var gen = 0, known = false;   // room generation; known = we heard it from a phone or the saved copy
   var outq = [], pend = [], sentAt = new Map(), asked = {}, pumpT = 0, lastKick = 0;
+  var unopened = [];        // ids we got while the page was out of view
+  var pics = new Map();     // message id -> {parts, got, bytes, url, t: last piece, q: last ask}
+  var picking = false, pickUntil = 0, lastAct = Date.now(), weakOk = false, picNoteT = 0;
   var emptyEl = $('#empty');
+
+  /* ---------- cover: what the page turns into when you look away ---------- */
+  var COVERS = [
+    { title: 'Garden Sale: Up to 40% Off | Fernley Home', icon: '\uD83E\uDEB4', site: 'Fernley Home', nav: ['Garden', 'Living', 'Kitchen', 'Sale'],
+      tag: 'Sponsored', head: 'Summer garden sale: up to 40% off',
+      text: 'Outdoor tables, chairs and planters at our lowest prices of the year. Free delivery on orders over 50. Offer ends Sunday.',
+      list: ['Acacia garden bench: was 149, now 89', 'Set of 3 clay planters: was 45, now 27', 'Solar path lights, pack of 6: was 30, now 18', 'Folding bistro set: was 120, now 79'],
+      btn: 'Shop the sale' },
+    { title: 'Easy One-Pan Lemon Chicken | Plain Kitchen', icon: '\uD83C\uDF4B', site: 'Plain Kitchen', nav: ['Dinner', 'Baking', 'Quick meals', 'Search'],
+      tag: 'Dinner \u00B7 35 minutes \u00B7 Serves 4', head: 'Easy one-pan lemon chicken',
+      text: 'A simple weeknight dinner with crisp chicken thighs, soft potatoes and a bright lemon sauce. Everything cooks in one pan.',
+      list: ['Heat the oven to 200 C. Cut 600 g of potatoes into wedges.', 'Brown 8 chicken thighs in an oven pan, skin side down, for 6 minutes.', 'Add the potatoes, 4 cloves of garlic, the juice of 2 lemons and 200 ml of stock.', 'Roast for 25 minutes. Scatter with parsley and serve.'],
+      btn: 'Print recipe' },
+    { title: 'Word of the Day: Petrichor | Daily Lexicon', icon: '\uD83D\uDCD6', site: 'Daily Lexicon', nav: ['Today', 'Archive', 'Quiz', 'About'],
+      tag: 'Word of the day', head: 'petrichor',
+      text: 'Noun. The pleasant, earthy smell that comes with the first rain after a long spell of warm, dry weather.',
+      list: ['"The petrichor drifted in through the open window."', 'First used in 1964 by two Australian scientists.', 'From the Greek petra (stone) and ichor (the fluid in the veins of the gods).', 'Yesterday: sonder. Tomorrow: a word for a very small amount.'],
+      btn: 'See the archive' }
+  ];
+  var COVER_KEY = 'room-cover', covering = false, taps = 0, tapT = 0;
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
+  function showCover(i) {
+    var c = COVERS[i] || COVERS[0], box = $('#cover');
+    box.textContent = '';
+    var top = el('div', 'cv-top'), site = el('span', 'cv-site', c.site);
+    top.appendChild(site);
+    c.nav.forEach(function (n) { top.appendChild(el('span', '', n)); });
+    var body = el('div', 'cv-body'), list = el('ul');
+    c.list.forEach(function (x) { list.appendChild(el('li', '', x)); });
+    [el('p', 'cv-tag', c.tag), el('h2', '', c.head), el('p', '', c.text), list, el('span', 'cv-btn', c.btn),
+      el('p', 'cv-foot', '\u00A9 ' + new Date().getFullYear() + ' ' + c.site + ' \u00B7 Privacy \u00B7 Terms \u00B7 Contact')].forEach(function (e) { body.appendChild(e); });
+    box.appendChild(top); box.appendChild(body);
+    // Three taps on the name at the top left bring the sign-in form back.
+    site.addEventListener('click', function () {
+      clearTimeout(tapT); tapT = setTimeout(function () { taps = 0; }, 1500);
+      if (++taps >= 3) hideCover();
+    });
+    document.title = c.title;
+    $('#icon').href = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="85">' + c.icon + '</text></svg>');
+    $('#join-screen').hidden = true; $('#chat-screen').hidden = true; box.hidden = false;
+  }
+  function hideCover() {
+    taps = 0;
+    try { sessionStorage.removeItem(COVER_KEY); } catch (e) {}
+    document.title = 'Room'; $('#icon').href = 'data:,';
+    $('#cover').hidden = true; $('#join-screen').hidden = false;
+  }
+  // Looked away while in a chat: put the cover up at once, tell the other person, then reload (that signs out).
+  function cover() {
+    if (!joined || covering || picking) return;   // the photo picker takes the focus: that is not looking away
+    covering = true;
+    var i = Math.floor(Math.random() * COVERS.length);
+    showCover(i);
+    $('#messages').textContent = '';
+    flush();
+    try { sessionStorage.setItem(COVER_KEY, String(i)); } catch (e) {}
+    var go = function () { location.reload(); };
+    publish({ t: 'b' }).then(go, go);
+    setTimeout(go, 800);
+  }
+  try { var saved = sessionStorage.getItem(COVER_KEY); if (saved !== null) showCover(+saved); } catch (e) {}
 
   function rid(n) { var a = crypto.getRandomValues(new Uint8Array(n)); return Array.prototype.map.call(a, function (b) { return (b % 36).toString(36); }).join(''); }
   function hex(buf) { return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
@@ -302,16 +464,25 @@ header h1{font-size:20px;margin:0}
   }
 
   /* ---------- messages ---------- */
-  function fmtTime(ts) {
-    var d = new Date(ts), now = new Date(), t = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-    if (d.toDateString() === now.toDateString()) return t;
-    var f = { day: 'numeric', month: 'short' };
-    if (d.getFullYear() !== now.getFullYear()) f.year = 'numeric';   // an old chat: say which year
-    return d.toLocaleDateString(undefined, f) + ' ' + t;
+  function fmtTime(ts) { var d = new Date(ts); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function dayOf(ts) {
+    var d = new Date(ts), n = new Date(), y = new Date(n.getFullYear(), n.getMonth(), n.getDate() - 1);
+    if (d.toDateString() === n.toDateString()) return 'Today';
+    if (d.toDateString() === y.toDateString()) return 'Yesterday';
+    var f = { weekday: 'short', day: 'numeric', month: 'short' };
+    if (d.getFullYear() !== n.getFullYear()) f.year = 'numeric';   // an old chat: say which year
+    return d.toLocaleDateString(undefined, f);
+  }
+  // The first message of a day carries the day. The style sheet shows it above the message.
+  function mark(e) {
+    if (!e || !e.classList.contains('msg')) return;
+    var p = e.previousElementSibling, d = dayOf(+e.dataset.ts);
+    if (p && p.classList.contains('msg') && dayOf(+p.dataset.ts) === d) e.removeAttribute('data-day'); else e.dataset.day = d;
   }
   function h32(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
   function stateText(m) {
     if (!m.mine) return '';
+    if (m.state === 'opened') return ' · Opened';
     if (m.state === 'seen') return ' · Delivered';
     if (m.state === 'sent') return ' · Sent';
     return readyCount() ? ' · Sending...' : ' · Waiting for connection';
@@ -321,19 +492,22 @@ header h1{font-size:20px;margin:0}
       var e = m.mine && els.get(id);
       if (!e) return;
       var s = e.querySelector('.msg-state'), t = stateText(m);
-      if (s.textContent !== t) s.textContent = t;      // write only what changed
+      if (s.textContent !== t) { s.textContent = t; e.dataset.state = m.state; }      // write only what changed
     });
   }
   function build(m) {
     var e = document.createElement('div');
     e.className = 'msg'; e.dataset.from = m.mine ? 'me' : 'them'; e.dataset.name = m.name; e.dataset.ts = m.ts; e.dataset.id = m.id;
     var n = document.createElement('div'); n.className = 'msg-name'; n.textContent = m.name;
-    var t = document.createElement('div'); t.className = 'msg-text'; t.textContent = m.text;
+    var t; if (m.im) t = picBox(m); else { t = document.createElement('div'); t.className = 'msg-text'; t.textContent = m.text; }
     var meta = document.createElement('div'); meta.className = 'msg-meta';
     var tm = document.createElement('span'); tm.textContent = fmtTime(m.ts);
     var sp = document.createElement('span'); sp.className = 'msg-state'; sp.textContent = stateText(m);
     meta.appendChild(tm); meta.appendChild(sp);
-    e.appendChild(n); e.appendChild(t); e.appendChild(meta);
+    var body = document.createElement('div'); body.className = 'msg-body';
+    body.appendChild(t); body.appendChild(meta);
+    e.appendChild(n); e.appendChild(body);
+    if (m.mine) e.dataset.state = m.state;
     els.set(m.id, e);
     return e;
   }
@@ -342,9 +516,11 @@ header h1{font-size:20px;margin:0}
     var e = build(m), o = box.lastElementChild;
     // walk back from the end: new messages nearly always belong there
     while (o && o.classList.contains('msg') && (+o.dataset.ts > m.ts || (+o.dataset.ts === m.ts && o.dataset.id > m.id))) o = o.previousElementSibling;
+    e.classList.add('in');
     box.insertBefore(e, o ? o.nextSibling : box.firstChild);
+    mark(e); mark(e.nextElementSibling);
     var empty = $('#empty'); if (empty) empty.remove();
-    if (m.mine || nearEnd) box.scrollTop = box.scrollHeight;
+    if (m.mine || nearEnd) { try { box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' }); } catch (x) { box.scrollTop = box.scrollHeight; } }
   }
   // Show many at once (restore, sync). On an empty screen this is one pass, newest in view.
   function renderMany(list) {
@@ -355,24 +531,31 @@ header h1{font-size:20px;margin:0}
     var f = document.createDocumentFragment();
     list.forEach(function (m) { f.appendChild(build(m)); });
     if (emptyEl.parentNode) emptyEl.remove();
-    box.appendChild(f); box.scrollTop = box.scrollHeight;
+    box.appendChild(f); box.querySelectorAll('.msg').forEach(mark); box.scrollTop = box.scrollHeight;
   }
   // One gate for every message, from a packet, a bundle or the saved copy. Gives a safe message, or null.
-  function clean(id, ts, n, x) {
+  function int(v, lo, hi) { return typeof v === 'number' && v % 1 === 0 && v >= lo && v <= hi; }
+  function clean(id, ts, n, x, im) {
     if (typeof id !== 'string' || !/^[0-9a-z]{8,40}$/.test(id) || typeof x !== 'string' || !x ||
       typeof ts !== 'number' || !(ts > 1e11 && ts < 1e14)) return null;
     var text = x.slice(0, 4000);
     if (enc.encode(JSON.stringify(text)).length > 15000) return null;    // it must fit in one packet when it is passed on
-    return { id: id, ts: ts, name: typeof n === 'string' && n ? n.slice(0, 30) : 'Friend', text: text };
+    var m = { id: id, ts: ts, name: typeof n === 'string' && n ? n.slice(0, 30) : 'Friend', text: text };
+    if (im && typeof im === 'object' && int(im.n, 1, 80) && int(im.z, 1, 720000) && int(im.w, 1, 8192) && int(im.h, 1, 8192) &&
+      im.n === Math.ceil(im.z / CHUNK)) m.im = { n: im.n, z: im.z, w: im.w, h: im.h };
+    return m;
   }
   function add(m) { m.h = h32(m.id); log.set(m.id, m); persist(msgRec(m)); }
   // The other phone holds it. This is saved too, so "Delivered" is still there after a reload.
-  function delivered(m) { if (m.mine && m.state !== 'seen') { m.state = 'seen'; persist(msgRec(m)); } }
+  function delivered(m) { if (m.mine && m.state !== 'seen' && m.state !== 'opened') { m.state = 'seen'; persist(msgRec(m)); } }
+  // It is on their screen.
+  function opened(m) { if (m.mine && m.state !== 'opened') { m.state = 'opened'; persist(msgRec(m)); } }
   function recent() { return Array.from(log.values()).sort(function (a, b) { return a.ts - b.ts; }).slice(-KEEP); }
 
   function sendMsg(m) {
     m.lastSent = Date.now();
     var o = { t: 'm', id: m.id, ts: m.ts, n: m.name, x: m.text };
+    if (m.im) o.im = m.im;
     if (known) o.g = gen;       // before we know the room generation we say nothing: it counts as current
     return publish(o).then(function (n) {
       if (n > 0 && m.state === 'sending') m.state = 'sent';
@@ -383,7 +566,7 @@ header h1{font-size:20px;margin:0}
   function resendUnseen(have) {
     var now = Date.now();
     recent().forEach(function (m) {
-      if (!m.mine || m.state === 'seen') return;
+      if (!m.mine || m.state === 'seen' || m.state === 'opened') return;
       if (have && have.indexOf(m.id) >= 0) { delivered(m); return; }
       if (now - (m.lastSent || 0) < 2500) return;
       sendMsg(m);
@@ -412,17 +595,18 @@ header h1{font-size:20px;margin:0}
       else if (o.g < gen) { if (o.t === 'p') kick(); return; }   // from a phone that has not heard about the delete
       learn();
     }
-    if (fresh && o.t !== 'b') kick();   // someone new came in: tell them at once what we hold
+    if (fresh && o.t !== 'b') { kick(); reopen(); }   // someone new came in: tell them at once what we hold
     if (o.t === 'm') {
       if (log.has(o.id)) { ack([o.id]); return; }
       // Put their send time on our clock, so both phones agree on the order. Never later than now.
-      var m = clean(o.id, Math.min(Date.now(), (+o.ts || o.at) + clockOff.get(o.s)), o.n, o.x);
+      var m = clean(o.id, Math.min(Date.now(), (+o.ts || o.at) + clockOff.get(o.s)), o.n, o.x, o.im);
       if (!m) return;
       m.mine = false; m.state = 'seen';
+      if (m.im && !pics.has(m.id)) pics.set(m.id, { parts: new Array(m.im.n), got: 0, t: Date.now() });   // the pieces follow
       add(m); render(m); ack([m.id]);
       $('#typing').hidden = true; clearTimeout(typingTimer);
     } else if (o.t === 'a') {
-      (Array.isArray(o.i) ? o.i : []).forEach(function (id) { var m = log.get(id); if (m) delivered(m); });
+      (Array.isArray(o.i) ? o.i : []).forEach(function (id) { var m = log.get(id); if (m) (o.o === 1 ? opened : delivered)(m); });
       updateStates();
     } else if (o.t === 'p') {
       onBeat(o);                                         // first: when the chats match, everything is delivered
@@ -431,6 +615,10 @@ header h1{font-size:20px;margin:0}
       onList(o);
     } else if (o.t === 'M') {
       onBundle(o);
+    } else if (o.t === 'i') {
+      onPiece(o);
+    } else if (o.t === 'q') {
+      onAsk(o);
     } else if (o.t === 'y') {
       $('#typing').hidden = false; clearTimeout(typingTimer);
       typingTimer = setTimeout(function () { $('#typing').hidden = true; }, TYPING_TTL);
@@ -438,10 +626,20 @@ header h1{font-size:20px;margin:0}
       peerSeen = 0; setPeer(false);
     }
   }
-  function ack(ids) { publish({ t: 'a', i: ids }); }
+  // "Got it." When the page is in view the message is on the screen: say "opened" too. If not, say it later.
+  function ack(ids) {
+    if (!ids.length) return;
+    if (document.hidden) { unopened = unopened.concat(ids).slice(-200); publish({ t: 'a', i: ids }); }
+    else publish({ t: 'a', i: ids, o: 1 });
+  }
+  function ackLater() { if (unopened.length && !document.hidden) { var i = unopened; unopened = []; ack(i); } }
+  // Someone new came in: tell them again which of their last messages were opened here (a "got it" can get lost).
+  function reopen() { ack(recent().filter(function (m) { return !m.mine; }).map(function (m) { return m.id; })); }
   function setPeer(on) {
     $('#peer').dataset.online = on ? 'true' : 'false';
     $('#peer-text').textContent = on ? (peerName ? peerName + ' is here' : 'The other person is here') : 'The other person is not here';
+    $('#here').dataset.on = on ? 'true' : 'false';
+    if (on) $('#face').textContent = (peerName || '?').charAt(0).toUpperCase();
     if (!on) $('#typing').hidden = true;
   }
 
@@ -493,7 +691,7 @@ header h1{font-size:20px;margin:0}
     var ep = epoch;
     job(function () {
       if (!db || (!wipe && ep !== epoch)) return;       // a delete came in between: these are old
-      if (wipe) recs = [{ k: 's', g: gen, y: known ? 1 : 0 }].concat(Array.from(log.values()).map(msgRec));
+      if (wipe) recs = [{ k: 's', g: gen, y: known ? 1 : 0 }].concat(recsFor(Array.from(log.values())));
       return Promise.all(recs.map(function (r) {
         var k = hex(crypto.getRandomValues(new Uint8Array(12)));
         return lock(r, k).then(function (v) { return { k: k, v: v }; });
@@ -502,7 +700,14 @@ header h1{font-size:20px;margin:0}
       }).then(function (ok) { if (!ok) cant(); });
     });
   }
-  function msgRec(m) { return { k: 'm', g: gen, id: m.id, ts: m.ts, n: m.name, x: m.text, w: m.mine ? 1 : 0, u: m.u ? 1 : 0, d: m.state === 'seen' ? 1 : 0 }; }
+  function msgRec(m) { return { k: 'm', g: gen, id: m.id, ts: m.ts, n: m.name, x: m.text, im: m.im, w: m.mine ? 1 : 0, u: m.u ? 1 : 0, d: m.state === 'opened' ? 2 : m.state === 'seen' ? 1 : 0 }; }
+  function picRec(id) { return { k: 'i', g: gen, id: id, d: b64(pics.get(id).bytes) }; }
+  // The records of these messages, and of their photos.
+  function recsFor(list) {
+    var r = list.map(msgRec);
+    list.forEach(function (m) { var p = m.im && pics.get(m.id); if (p && p.bytes) r.push(picRec(m.id)); });
+    return r;
+  }
   function persist(rec) { dirty.push(rec); if (!saveTimer) saveTimer = setTimeout(flush, 250); }
   function flush() { clearTimeout(saveTimer); saveTimer = 0; if (dirty.length) { var b = dirty; dirty = []; save(false, b); } }
   function restore() {
@@ -534,18 +739,22 @@ header h1{font-size:20px;margin:0}
     objs.forEach(function (o, i) {
       if (!o || !okGen(o.g)) return;
       if (o.g < gen) { old.push(rows[i].k); return; }          // from before a delete
-      var m = o.k === 'm' && o.g === gen ? clean(o.id, o.ts, o.n, o.x) : null;
+      if (o.k === 'i' && o.g === gen) {                         // a saved photo
+        if (typeof o.id === 'string' && typeof o.d === 'string' && o.d.length < 1e6) { try { setPic(o.id, unb64(o.d), true); } catch (e) {} }
+        return;
+      }
+      var m = o.k === 'm' && o.g === gen ? clean(o.id, o.ts, o.n, o.x, o.im) : null;
       if (!m) return;
-      var r = o.w !== 1 ? 0 : o.d === 1 ? 2 : 1, had = log.get(m.id);   // 0 theirs, 1 mine, 2 mine and delivered
+      var r = o.w !== 1 ? 0 : o.d === 2 ? 3 : o.d === 1 ? 2 : 1, had = log.get(m.id);   // 0 theirs, 1 mine, 2 mine and delivered, 3 mine and opened
       if (had) {
         // A second record of one message (saved when sent, saved again when delivered). Keep the better one.
         if (!from.has(m.id)) return;                             // it came in while we were loading: tidied at the next load
-        if (r > (!had.mine ? 0 : had.state === 'seen' ? 2 : 1)) {
-          old.push(from.get(m.id)); from.set(m.id, rows[i].k); had.mine = true; had.state = r > 1 ? 'seen' : 'sent';
+        if (r > (!had.mine ? 0 : had.state === 'opened' ? 3 : had.state === 'seen' ? 2 : 1)) {
+          old.push(from.get(m.id)); from.set(m.id, rows[i].k); had.mine = true; had.state = r > 2 ? 'opened' : r > 1 ? 'seen' : 'sent';
         } else old.push(rows[i].k);
         return;
       }
-      m.mine = r > 0; m.state = r === 1 ? 'sent' : 'seen'; m.u = o.u === 1; m.h = h32(m.id);
+      m.mine = r > 0; m.state = r === 1 ? 'sent' : r === 3 ? 'opened' : 'seen'; m.u = o.u === 1; m.h = h32(m.id);
       if (m.ts > lastTs) lastTs = m.ts;                          // what we write next goes below everything saved
       from.set(m.id, rows[i].k); log.set(m.id, m); fresh.push(m);
     });
@@ -558,13 +767,17 @@ header h1{font-size:20px;margin:0}
     gen = g; epoch++; dirty = []; clearTimeout(saveTimer); saveTimer = 0;
     outq = []; pend = []; sentAt.clear(); asked = {};
     log.clear(); els.clear();
+    var kept = new Map();
+    keep.forEach(function (m) { var p = pics.get(m.id); if (p) kept.set(m.id, p); });
+    pics.forEach(function (p, id) { if (p.url && !kept.has(id)) URL.revokeObjectURL(p.url); });
+    pics = kept; $('#viewer').hidden = true;
     var box = $('#messages');
     box.querySelectorAll('.msg').forEach(function (e) { e.remove(); });
     box.appendChild(emptyEl);
     keep.forEach(function (m) { m.u = !known; log.set(m.id, m); });
     renderMany(Array.from(log.values()));
     // soft = the generation comes from the saved copy itself: keep that copy, only add what was written meanwhile
-    if (soft) { if (keep.length) save(false, keep.map(msgRec)); } else save(true);
+    if (soft) { if (keep.length) save(false, recsFor(keep)); } else save(true);
   }
   // A higher generation: drop the old chat. Messages this phone wrote before it knew the generation stay.
   function applyGen(g, learned, soft) {
@@ -636,7 +849,7 @@ header h1{font-size:20px;margin:0}
     while (pend.length) {
       var m = log.get(pend[0]);
       if (!m) { pend.shift(); continue; }
-      var it = { id: m.id, ts: m.ts, n: m.name, x: m.text, w: m.mine ? 1 : 0 }, len = enc.encode(JSON.stringify(it)).length;
+      var it = { id: m.id, ts: m.ts, n: m.name, x: m.text, im: m.im, w: m.mine ? 1 : 0 }, len = enc.encode(JSON.stringify(it)).length;
       if (items.length && (size + len > 6500 || items.length >= 100)) break;
       pend.shift(); items.push(it); size += len;
     }
@@ -646,13 +859,14 @@ header h1{font-size:20px;margin:0}
     if (!Array.isArray(o.m)) return;
     var off = clockOff.get(o.s) || 0, fresh = [], mineName = me.name.trim().toLowerCase();
     o.m.slice(0, 100).forEach(function (e) {
-      var m = e && typeof e.ts === 'number' && !log.has(e.id) ? clean(e.id, Math.min(Date.now(), e.ts + off), e.n, e.x) : null;
+      var m = e && typeof e.ts === 'number' && !log.has(e.id) ? clean(e.id, Math.min(Date.now(), e.ts + off), e.n, e.x, e.im) : null;
       if (!m) return;
       // "me" when the phone that passes it on did not write it, and it carries this person's name
       m.mine = !e.w && m.name.trim().toLowerCase() === mineName; m.state = 'seen';
       add(m); fresh.push(m);
     });
     renderMany(fresh);
+    ack(fresh.filter(function (m) { return !m.mine; }).map(function (m) { return m.id; }));
   }
   // Send queued packets one by one, about three a second.
   function pump() {
@@ -661,8 +875,130 @@ header h1{font-size:20px;margin:0}
     if (!o) return;
     if (!readyCount()) { outq = []; pend = []; sentAt.clear(); return; }   // the next beat starts it again
     publish(o);
-    pumpT = setTimeout(function () { pumpT = 0; pump(); }, 350);
+    pumpT = setTimeout(function () { pumpT = 0; pump(); }, o.t === 'i' ? 200 : 350);
   }
+
+  /* ---------- photos ---------- */
+  function b64(u) { var s = ''; for (var i = 0; i < u.length; i += 8192) s += String.fromCharCode.apply(null, u.subarray(i, i + 8192)); return btoa(s); }
+  function unb64(s) { var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+  function picBox(m) {
+    var b = el('div', 'msg-pic');
+    b.style.aspectRatio = String(Math.min(2.4, Math.max(0.6, m.im.w / m.im.h)));
+    fillPic(b, m);
+    return b;
+  }
+  function fillPic(b, m) {
+    if (!b) return;
+    var p = pics.get(m.id);
+    b.textContent = '';
+    if (p && p.url) {
+      var i = new Image(); i.alt = 'Photo'; i.draggable = false;
+      i.onerror = function () { b.removeAttribute('data-ready'); b.textContent = 'This photo cannot be shown.'; };
+      i.src = p.url; b.appendChild(i); b.dataset.ready = '1';
+    } else b.textContent = p && p.got ? 'Getting the photo... ' + p.got + ' of ' + m.im.n : 'The photo is on its way...';
+  }
+  function repaint(id) { var e = els.get(id), m = log.get(id); if (e && m) fillPic(e.querySelector('.msg-pic'), m); }
+  // The photo is whole. quiet = it comes from the saved copy, so do not save it again.
+  function setPic(id, bytes, quiet) {
+    var p = pics.get(id) || {};
+    if (p.url) return;
+    p.bytes = bytes; p.parts = null;
+    p.url = URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' }));   // always shown as a JPEG, whatever was sent
+    pics.set(id, p);
+    if (!quiet) persist(picRec(id));
+    repaint(id);
+  }
+  function onPiece(o) {
+    var m = typeof o.id === 'string' && log.get(o.id);
+    if (!m || !m.im || typeof o.d !== 'string' || o.d.length > 12100 || !int(o.k, 0, m.im.n - 1)) return;
+    var p = pics.get(m.id);
+    if (!p) { p = { parts: new Array(m.im.n), got: 0 }; pics.set(m.id, p); }
+    if (p.url || p.parts[o.k]) return;
+    var part; try { part = unb64(o.d); } catch (e) { return; }
+    if (part.length > CHUNK) return;
+    p.parts[o.k] = part; p.got++; p.t = Date.now();
+    if (p.got < m.im.n) { repaint(m.id); return; }
+    var all = new Uint8Array(m.im.z), off = 0, ok = true;
+    p.parts.forEach(function (x) { if (off + x.length > all.length) ok = false; else all.set(x, off); off += x.length; });
+    if (!ok || off !== m.im.z) { pics.delete(m.id); repaint(m.id); return; }   // the pieces do not add up: start again
+    setPic(m.id, all);
+  }
+  // Ask for the pieces of one photo we do not hold yet. One ask at a time.
+  function wantPics() {
+    if (!peerSeen || !readyCount()) return;
+    var now = Date.now(), done = false;
+    log.forEach(function (m) {
+      if (done || !m.im) return;
+      var p = pics.get(m.id);
+      if (p && (p.url || now - (p.t || 0) < 4000 || now - (p.q || 0) < 6000)) return;
+      if (!p) { p = { parts: new Array(m.im.n), got: 0 }; pics.set(m.id, p); }
+      var miss = [];
+      for (var k = 0; k < m.im.n && miss.length < 30; k++) if (!p.parts[k]) miss.push(k);
+      p.q = now; done = true;
+      publish({ t: 'q', g: gen, id: m.id, k: miss });
+    });
+  }
+  function onAsk(o) {
+    var m = typeof o.id === 'string' && log.get(o.id), p = m && pics.get(m.id);
+    if (m && m.im && p && p.bytes && Array.isArray(o.k)) pushPic(m, o.k.slice(0, 40));
+  }
+  function pushPic(m, ks) {
+    var p = pics.get(m.id), now = Date.now();
+    ks.forEach(function (k) {
+      var tag = m.id + ':' + k;
+      if (!int(k, 0, m.im.n - 1) || sentAt.get(tag) > now - 8000) return;
+      sentAt.set(tag, now);
+      outq.push({ t: 'i', g: gen, id: m.id, k: k, d: b64(p.bytes.subarray(k * CHUNK, (k + 1) * CHUNK)) });
+    });
+    pump();
+  }
+  // Draw the picture again as a JPEG, smaller each try, until it is small enough to send.
+  function shrink(file) {
+    return new Promise(function (res, rej) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onerror = function () { URL.revokeObjectURL(url); rej(); };
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        var tries = [[1280, 0.72], [1024, 0.62], [800, 0.5], [640, 0.4]], i = 0, iw = img.naturalWidth, ih = img.naturalHeight;
+        if (!iw || !ih) { rej(); return; }
+        (function next() {
+          var t = tries[i++], sc = Math.min(1, t[0] / Math.max(iw, ih));
+          var w = Math.max(1, Math.round(iw * sc)), h = Math.max(1, Math.round(ih * sc));
+          try {
+            var c = document.createElement('canvas'); c.width = w; c.height = h;
+            var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+            c.toBlob(function (b) {
+              if (!b) { rej(); return; }
+              if (b.size > PIC_AIM && i < tries.length) { next(); return; }
+              if (b.size > PIC_MAX) { rej(); return; }
+              b.arrayBuffer().then(function (ab) { res({ bytes: new Uint8Array(ab), w: w, h: h }); }, rej);
+            }, 'image/jpeg', t[1]);
+          } catch (e) { rej(); }
+        })();
+      };
+      img.src = url;
+    });
+  }
+  function sendPic(file) {
+    if (!joined || !file || !/^image\//.test(file.type)) return;
+    shrink(file).then(function (r) {
+      if (!joined || covering) return;
+      lastTs = Math.max(Date.now(), lastTs + 1);
+      var m = { id: rid(14), ts: lastTs, name: me.name, text: 'Photo', im: { n: Math.ceil(r.bytes.length / CHUNK), z: r.bytes.length, w: r.w, h: r.h },
+        mine: true, state: 'sending', lastSent: 0, u: !known };
+      setPic(m.id, r.bytes);
+      add(m); render(m); refreshStatus();
+      sendMsg(m).then(function () {
+        if (!peerSeen) return;                             // nobody there: they ask for it when they come
+        var all = []; for (var k = 0; k < m.im.n; k++) all.push(k);
+        pushPic(m, all);
+      });
+    }).catch(function () {
+      $('#pic-note').hidden = false; clearTimeout(picNoteT);
+      picNoteT = setTimeout(function () { $('#pic-note').hidden = true; }, 6000);
+    });
+  }
+  function endPick() { setTimeout(function () { picking = false; if (document.hidden) cover(); }, 800); }
 
   /* ---------- wiring ---------- */
   // Connect to the relays. This waits until the saved chat is loaded, so no packet can run ahead of it.
@@ -671,8 +1007,12 @@ header h1{font-size:20px;margin:0}
     started = true; startedAt = Date.now();
     relays.forEach(function (r) { r.connect(); });
   }
-  function wake() { if (started) relays.forEach(function (r) { r.wake(); }); beat(); }
-  document.addEventListener('visibilitychange', function () { if (document.hidden) flush(); else wake(); });
+  function wake() { if (started) relays.forEach(function (r) { r.wake(); }); beat(); ackLater(); }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) { flush(); cover(); } else wake(); });
+  // Another window or app took the focus (the page may still be in view).
+  window.addEventListener('blur', function () { setTimeout(function () { if (!document.hasFocus()) cover(); }, 200); });
+  window.addEventListener('focus', function () { if (picking) endPick(); });
+  ['pointerdown', 'keydown'].forEach(function (ev) { document.addEventListener(ev, function () { lastAct = Date.now(); }, true); });
   window.addEventListener('online', wake);
   window.addEventListener('pageshow', wake);
   window.addEventListener('offline', refreshStatus);
@@ -690,6 +1030,7 @@ header h1{font-size:20px;margin:0}
   $('#password').addEventListener('input', function () {
     var n = $('#password').value.length, h = $('#pw-hint');
     h.className = 'hint' + (n >= 20 ? ' good' : n ? ' weak' : '');
+    weakOk = false;
     h.textContent = !n ? 'A long password is safer. Try 4 words in a row.' : n < 20 ? 'Make it longer. Four words in a row is a good password.' : 'Good. That is a strong password.';
   });
   $('#show').addEventListener('click', function () {
@@ -698,30 +1039,41 @@ header h1{font-size:20px;margin:0}
     $('#show').textContent = hide ? 'Show' : 'Hide';
   });
 
+  function fail(text) {
+    var err = $('#join-error'), f = $('#join-form');
+    err.textContent = text; err.hidden = false;
+    f.classList.remove('shake'); void f.offsetWidth; f.classList.add('shake');
+  }
   $('#join-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var name = $('#name').value.trim(), pw = $('#password').value, err = $('#join-error');
     err.hidden = true;
-    if (!name) { err.textContent = 'Type your name first.'; err.hidden = false; return; }
-    if (!pw) { err.textContent = 'Type the password first.'; err.hidden = false; return; }
+    if (!name) { fail('Type your name first.'); return; }
+    if (!pw) { fail('Type the password first.'); return; }
+    if (pw.length < 12 && !weakOk) {
+      weakOk = true; fail('This password is short, so it is easy to guess. Tap Go in again to use it anyway.'); return;
+    }
     $('#join').disabled = true;
     me.name = name.slice(0, 30);
     derive(pw).then(function () {
       $('#password').value = ''; $('#password').type = 'password';
-      joined = true; startedAt = Date.now();
+      joined = true; startedAt = lastAct = Date.now();
       $('#join-screen').hidden = true; $('#chat-screen').hidden = false;
       fit(); $('#text').focus();
+      if (document.hidden) { cover(); return; }   // looked away while the password was being checked
       openStore(); restore();
       job(start);                    // connect once the saved chat is loaded
       setTimeout(start, 9000);       // or after 9 seconds, if the storage is that slow
       setInterval(beat, BEAT);
       setInterval(function () {
         if (peerSeen && Date.now() - peerSeen > PEER_TTL) { peerSeen = 0; setPeer(false); }
-        prune(); refreshStatus();
+        prune(); refreshStatus(); wantPics();
+        if (picking && Date.now() > pickUntil) { picking = false; if (document.hidden) cover(); }
+        if (Date.now() - lastAct > IDLE) cover();        // nobody touched the page for 10 minutes
         sentAt.forEach(function (t, id) { if (t < Date.now() - 60000) sentAt.delete(id); });
       }, 2000);
     }).catch(function () {
-      $('#join').disabled = false; err.textContent = 'Something went wrong. Please try again.'; err.hidden = false;
+      $('#join').disabled = false; fail('Something went wrong. Please try again.');
     });
   });
 
@@ -747,7 +1099,8 @@ header h1{font-size:20px;margin:0}
     e.preventDefault();
     var box = $('#text'), text = box.value.trim();
     if (!text) return;
-    box.value = ''; lastTypingSent = 0;
+    box.value = ''; lastTypingSent = 0; $('#composer').removeAttribute('data-has');
+    var sb = $('#send'); sb.classList.remove('go'); void sb.offsetWidth; sb.classList.add('go');
     lastTs = Math.max(Date.now(), lastTs + 1);
     var m = { id: rid(14), ts: lastTs, name: me.name, text: text, mine: true, state: 'sending', lastSent: 0, u: !known };
     add(m); render(m); refreshStatus();
@@ -755,7 +1108,28 @@ header h1{font-size:20px;margin:0}
     box.focus();
   });
   $('#send').addEventListener('mousedown', function (e) { e.preventDefault(); });
+
+  // Photos: pick one, or paste one into the message box.
+  $('#attach').addEventListener('click', function () { picking = true; pickUntil = Date.now() + 120000; $('#file').click(); });
+  $('#file').addEventListener('change', function () { var f = this.files && this.files[0]; this.value = ''; endPick(); if (f) sendPic(f); });
+  $('#file').addEventListener('cancel', endPick);
+  $('#text').addEventListener('paste', function (e) {
+    var f = e.clipboardData && e.clipboardData.files;
+    if (f && f.length && /^image\//.test(f[0].type)) { e.preventDefault(); sendPic(f[0]); }
+  });
+  // Tap a photo to see it large. Save puts it in the downloads of this phone.
+  $('#messages').addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.msg-pic[data-ready]') : null, m = b && b.closest('.msg'), p = m && pics.get(m.dataset.id);
+    if (!p || !p.url) return;
+    $('#viewer-img').src = p.url;
+    $('#viewer-save').href = p.url;
+    $('#viewer-save').download = 'photo-' + new Date(+m.dataset.ts).toISOString().slice(0, 16).replace(/[T:]/g, '-') + '.jpg';
+    $('#viewer').hidden = false;
+  });
+  $('#viewer-close').addEventListener('click', function () { $('#viewer').hidden = true; });
+  $('#viewer-img').addEventListener('click', function () { $('#viewer').hidden = true; });
   $('#text').addEventListener('input', function () {
+    if ($('#text').value.trim()) $('#composer').dataset.has = '1'; else $('#composer').removeAttribute('data-has');
     if (!$('#text').value || !joined) return;
     var now = Date.now();
     if (now - lastTypingSent > 2000) { lastTypingSent = now; publish({ t: 'y' }); }

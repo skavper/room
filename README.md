@@ -14,14 +14,22 @@ The password is the room. Anyone who types the same password lands in the same c
 
 If the other person is in but you cannot see each other, one of the passwords is different. Tap **Leave** and type it again.
 
+### Getting back in after the page hides
+
+Tap the site name at the top left of the cover page **three times**, quickly. The sign-in form comes back. Type your name and the password again; the saved chat is still there.
+
 ## What it does
 
 - **End-to-end encrypted.** Messages are encrypted in the browser before they leave the phone. The relays that carry them only see random-looking bytes.
 - **Saved on your device.** The chat is stored in the browser, locked with the password. It is still there when you come back and type the same password.
-- **Works offline.** Messages written without a connection go out when it is back. Each message shows Sending, Sent, or Delivered.
+- **Works offline.** Messages written without a connection go out when it is back.
+- **Sent, Delivered, Opened.** Your last message shows how far it got: Sent (it left your phone), Delivered (the other phone has it) or Opened (it is on their screen).
+- **Chat lines, not bubbles.** Each message is a line with a coloured bar and the name of who wrote it, grouped under the day.
 - **Catches up.** If one phone missed messages, the two phones compare what they hold and send only what is missing.
-- **Delete chat.** Removes the chat for both people. This cannot be undone.
-- **Typing and presence.** You can see when the other person is here and when they are typing.
+- **Photos.** Tap the picture button, or paste a picture into the message box. The photo is made smaller before it is sent, and what the camera wrote into the file (such as the place it was taken) is removed. Photos are saved with the chat. Tap one to see it large and to save it to your device.
+- **Delete chat.** Removes the chat and its photos for both people. This cannot be undone.
+- **Typing and presence.** The first letter of the other person's name pops up at the bottom while they are in the chat, with moving dots while they type.
+- **Hides when you look away.** Switch tab, switch app or click another window and the chat signs you out and turns into a harmless-looking page: a shop sale, a recipe or a word of the day, picked at random, with its own tab title and icon.
 
 ## How it works
 
@@ -33,9 +41,19 @@ Everything is in [`index.html`](index.html). There is no build step and no depen
 | Transport | Encrypted packets are published over MQTT on WebSocket to three public brokers (HiveMQ, EMQX, Mosquitto) at once, so the chat keeps working if one is down. |
 | Packets | 12 random bytes (nonce) + AES-GCM ciphertext, padded to 1024, 2048, 4096… bytes so the length of a message is hidden. |
 | Replay guard | A packet is dropped if it does not decrypt, if its nonce was seen before, or if its clock is more than 10 minutes off. |
-| Storage | IndexedDB, one encrypted record per message. No key or password is ever stored. |
+| Photos | Redrawn in the browser as a JPEG (1280 px at most), then sent encrypted in pieces of 9,000 bytes. A phone that misses pieces asks for them again. |
+| Storage | IndexedDB, one encrypted record per message and per photo. No key or password is ever stored. |
 
 The comment at the top of the script in `index.html` describes the packet types, the delete mechanism and the sync protocol in full.
+
+## Safety
+
+- **Nothing from outside.** A content security policy lets the page load no outside script, style or picture, and lets it talk only to the three relays.
+- **No framing.** The page refuses to run inside another website.
+- **Short passwords need a second tap.** A password under 12 characters shows a warning first.
+- **Hides when you look away,** and also after 10 minutes without a touch.
+- **Photos are shown only as pictures.** Whatever arrives is treated as a JPEG image and nothing else.
+- **Text is never treated as code.** Messages and names are shown as plain text.
 
 ## Limits
 
@@ -44,6 +62,9 @@ The comment at the top of the script in `index.html` describes the packet types,
 - **Both phones need the right time.** Set the clock to automatic. A clock more than 10 minutes off makes the other phone ignore your messages.
 - **The relays are public test brokers.** They cannot read the chat, but they can see that someone is using the room, and they make no promise to stay up.
 - **Clearing browser data deletes the saved chat** on that device.
+- **Photos are for the new page only.** A phone that still has the old page open shows the word "Photo" until it is reloaded.
+- **A saved or screenshotted photo is out of the room.** Delete chat cannot reach a copy the other person has saved.
+- **The cover is a disguise, not a lock.** The address bar still shows this site, and anyone who knows the three taps gets the sign-in form. The password still protects the chat.
 
 ## Run it yourself
 
