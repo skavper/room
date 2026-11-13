@@ -44,6 +44,10 @@ header h1{font-size:20px;margin:0}
 .msg-name{font-size:13px;font-weight:700;opacity:.8}
 .msg-text{white-space:pre-wrap}
 .msg-meta{font-size:12px;opacity:.8;text-align:right}
+#tools{display:flex;justify-content:flex-end;padding:4px 12px;border-bottom:1px solid var(--line)}
+#tools button{padding:4px 10px;font-size:14px}
+#clear-ask p{margin:0 0 8px}
+#clear-ask button{margin-right:8px;padding:8px 14px}
 #empty{margin:auto;color:var(--soft);text-align:center;padding:0 12px}
 #empty small{display:block;margin-top:10px;font-size:14px}
 #typing{padding:2px 14px;color:var(--soft);font-size:14px}
@@ -67,7 +71,7 @@ header h1{font-size:20px;margin:0}
     <p id="pw-hint" class="hint">A long password is safer. Try 4 words in a row.</p>
     <p id="join-error" class="hint weak" hidden></p>
     <button id="join" type="submit">Go in</button>
-    <p class="small">Nothing is saved. Messages are gone when you close the page.</p>
+    <p class="small">Your chat is saved on this phone. It is locked with the password.</p>
   </form>
 </main>
 <section id="chat-screen" hidden>
@@ -81,6 +85,12 @@ header h1{font-size:20px;margin:0}
   </header>
   <div id="notice" class="note" hidden>No connection. Your messages will go out when it is back.</div>
   <div id="clock-note" class="note" hidden>The time on one phone looks wrong. Set the time to automatic on both phones.</div>
+  <div id="save-note" class="note" hidden>Your chat cannot be saved on this phone. You can still chat.</div>
+  <div id="tools"><button id="clear" type="button" class="quiet">Delete chat</button></div>
+  <div id="clear-ask" class="note" hidden>
+    <p>Delete this chat for both of you? It cannot be undone.</p>
+    <button id="clear-yes" type="button">Yes, delete it</button><button id="clear-no" type="button" class="quiet">No, keep it</button>
+  </div>
   <div id="messages" aria-live="polite"><p id="empty">No messages yet. Say hello!<small>Is the other person here, but you cannot see them? Then one password is different. Tap Leave and type it again.</small></p></div>
   <div id="typing" hidden>The other person is typing...</div>
   <form id="composer" autocomplete="off">
@@ -93,21 +103,39 @@ header h1{font-size:20px;margin:0}
 /*
   How it works. Everything is in this one file.
 
-  - The password is stretched with PBKDF2-SHA-256 (250,000 rounds) into 48 bytes.
+  - The password is stretched with PBKDF2-SHA-256 (250,000 rounds) into 64 bytes.
     Bytes 0-31 are the AES-256-GCM key. Bytes 32-47 name the meeting place (the topic).
-    The topic does not reveal the key or the password.
+    Bytes 48-63 name the saved chat on this phone. None of these reveals the key or the password.
   - Every packet on the wire is: 12 random bytes (nonce) + AES-GCM(JSON, padded with spaces
-    to 1024, 2048, 4096... bytes). The relays only see this. Padding hides how long a message is.
+    to 1024, 2048, 4096... bytes, 16384 at most). The relays only see this. Padding hides how long
+    a message is.
   - JSON fields: v (version), s (sender id, random per page), at (sender clock when sealed), t (type):
-      m  message   {id, ts, n: name, x: text}
+      m  message   {id, ts, n: name, x: text, g}
       a  got it    {i: [ids]}
-      p  here      {n: name, h: [recent ids]}   every 8 s; the author re-sends what is missing
+      p  here      {n: name, h: [recent ids], g, c}   every 8 s; the author re-sends what is missing
+      k  my list   {g, l: [[bucket, after id, up to id, [ids]]]}
+      M  bundle    {g, m: [{id, ts, n, x, w}]}   w = 1: the phone that passes it on wrote it
       y  typing
       b  leaving
   - A packet is dropped when it does not decrypt (wrong password or changed), when its nonce was
     seen before (a replay, or the same packet from a second relay), or when its clock is more than
     10 minutes away from ours (an old recording).
-  - Nothing is written to storage. Closing or reloading the page wipes everything.
+  - Every message passes one gate (clean) before it is used: from a packet, from a bundle and from
+    the saved copy. Text is only ever shown with textContent.
+  - Saved chat: IndexedDB, one encrypted record per message plus small encrypted state records. Record
+    keys are random. The database name comes from bytes 48-63 of the PBKDF2 output (per password).
+    Saved blobs use the same AES key but with additional data ("saved:" + record key), so a saved blob is
+    never a valid packet and a packet is never a valid saved blob. No key or password is stored.
+    A message is saved when it is added, and once more when it is delivered. The next load keeps
+    the better record. The page connects only after the saved chat is loaded.
+  - Delete = a room "generation" number (g). Packets carry g; lower g is ignored, higher g wipes our
+    chat and we move to it. A new generation is max(old + 1, seconds now, rounded up), so a phone
+    that missed earlier deletes still wins. Old pages send no g: treated as the current one, unless
+    the message was sealed before the delete (at < g * 1000). That is an old recording, played again.
+  - Sync (new packet types, old pages ignore them): the beat 'p' also carries c, 16 buckets of
+    [count, xor of id hashes]. When a bucket differs, the phone sends 'k' (the ids it holds in that
+    bucket, in id ranges). The other phone answers with 'M' bundles holding only what is missing.
+    Packets leave through a queue, about 3 a second. Nothing is sent again once the chats match.
 */
 (function () {
   var $ = function (s) { return document.querySelector(s); };
@@ -123,7 +151,11 @@ header h1{font-size:20px;margin:0}
   var seen = new Map();     // packet nonce -> time first seen (replay guard and relay dedupe)
   var clockOff = new Map(); // sender id -> our clock minus their clock
   var lastTs = 0, peerSeen = 0, peerName = '', typingTimer = 0, lastTypingSent = 0;
-  var joined = false, startedAt = 0, everReady = false;
+  var joined = false, started = false, startedAt = 0, everReady = false;
+  var slot = '', db = null, chain = null, dirty = [], saveTimer = 0, epoch = 0, noteShown = false;
+  var gen = 0, known = false;   // room generation; known = we heard it from a phone or the saved copy
+  var outq = [], pend = [], sentAt = new Map(), asked = {}, pumpT = 0, lastKick = 0;
+  var emptyEl = $('#empty');
 
   function rid(n) { var a = crypto.getRandomValues(new Uint8Array(n)); return Array.prototype.map.call(a, function (b) { return (b % 36).toString(36); }).join(''); }
   function hex(buf) { return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
@@ -131,9 +163,10 @@ header h1{font-size:20px;margin:0}
   /* ---------- crypto ---------- */
   function derive(pw) {
     return crypto.subtle.importKey('raw', enc.encode(pw.normalize('NFKC')), 'PBKDF2', false, ['deriveBits']).then(function (base) {
-      return crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(SALT), iterations: ROUNDS }, base, 384);
+      return crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(SALT), iterations: ROUNDS }, base, 512);
     }).then(function (bits) {
       topic = 'room/' + hex(bits.slice(32, 48));
+      slot = hex(bits.slice(48, 64));
       return crypto.subtle.importKey('raw', bits.slice(0, 32), 'AES-GCM', false, ['encrypt', 'decrypt']);
     }).then(function (k) { key = k; });
   }
@@ -149,14 +182,14 @@ header h1{font-size:20px;margin:0}
     });
   }
   function open(bytes) {
-    if (bytes.length < 12 + PAD + 16) return Promise.resolve(null);
+    if (bytes.length < 12 + PAD + 16 || bytes.length > 12 + 16 * PAD + 16) return Promise.resolve(null);   // too small or too big to be ours
     var nonce = hex(bytes.slice(0, 12));
     if (seen.has(nonce)) return Promise.resolve(null);
     return crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(0, 12) }, key, bytes.slice(12)).then(function (pt) {
       if (seen.has(nonce)) return null;              // a second copy finished decrypting first
       seen.set(nonce, Date.now());
       var o = JSON.parse(dec.decode(pt));
-      return o && o.v === 1 && typeof o.s === 'string' && typeof o.at === 'number' ? o : null;
+      return o && o.v === 1 && typeof o.s === 'string' && /^[0-9a-z]{1,40}$/.test(o.s) && typeof o.at === 'number' ? o : null;
     }).catch(function () { return null; });
   }
   function prune() { var old = Date.now() - 2 * SKEW; seen.forEach(function (t, k) { if (t < old) seen.delete(k); }); }
@@ -269,7 +302,14 @@ header h1{font-size:20px;margin:0}
   }
 
   /* ---------- messages ---------- */
-  function fmtTime(ts) { var d = new Date(ts); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function fmtTime(ts) {
+    var d = new Date(ts), now = new Date(), t = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    if (d.toDateString() === now.toDateString()) return t;
+    var f = { day: 'numeric', month: 'short' };
+    if (d.getFullYear() !== now.getFullYear()) f.year = 'numeric';   // an old chat: say which year
+    return d.toLocaleDateString(undefined, f) + ' ' + t;
+  }
+  function h32(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
   function stateText(m) {
     if (!m.mine) return '';
     if (m.state === 'seen') return ' · Delivered';
@@ -277,10 +317,14 @@ header h1{font-size:20px;margin:0}
     return readyCount() ? ' · Sending...' : ' · Waiting for connection';
   }
   function updateStates() {
-    log.forEach(function (m, id) { if (m.mine && els.has(id)) els.get(id).querySelector('.msg-state').textContent = stateText(m); });
+    log.forEach(function (m, id) {
+      var e = m.mine && els.get(id);
+      if (!e) return;
+      var s = e.querySelector('.msg-state'), t = stateText(m);
+      if (s.textContent !== t) s.textContent = t;      // write only what changed
+    });
   }
-  function render(m) {
-    var box = $('#messages'), nearEnd = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+  function build(m) {
     var e = document.createElement('div');
     e.className = 'msg'; e.dataset.from = m.mine ? 'me' : 'them'; e.dataset.name = m.name; e.dataset.ts = m.ts; e.dataset.id = m.id;
     var n = document.createElement('div'); n.className = 'msg-name'; n.textContent = m.name;
@@ -290,18 +334,47 @@ header h1{font-size:20px;margin:0}
     var sp = document.createElement('span'); sp.className = 'msg-state'; sp.textContent = stateText(m);
     meta.appendChild(tm); meta.appendChild(sp);
     e.appendChild(n); e.appendChild(t); e.appendChild(meta);
-    var before = null;
-    box.querySelectorAll('.msg').forEach(function (o) { if (!before && (+o.dataset.ts > m.ts || (+o.dataset.ts === m.ts && o.dataset.id > m.id))) before = o; });
-    box.insertBefore(e, before);
-    var empty = $('#empty'); if (empty) empty.remove();
     els.set(m.id, e);
+    return e;
+  }
+  function render(m) {
+    var box = $('#messages'), nearEnd = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+    var e = build(m), o = box.lastElementChild;
+    // walk back from the end: new messages nearly always belong there
+    while (o && o.classList.contains('msg') && (+o.dataset.ts > m.ts || (+o.dataset.ts === m.ts && o.dataset.id > m.id))) o = o.previousElementSibling;
+    box.insertBefore(e, o ? o.nextSibling : box.firstChild);
+    var empty = $('#empty'); if (empty) empty.remove();
     if (m.mine || nearEnd) box.scrollTop = box.scrollHeight;
   }
+  // Show many at once (restore, sync). On an empty screen this is one pass, newest in view.
+  function renderMany(list) {
+    var box = $('#messages');
+    list.sort(function (a, b) { return a.ts - b.ts || (a.id < b.id ? -1 : 1); });
+    if (box.querySelector('.msg')) { list.forEach(render); return; }
+    if (!list.length) return;
+    var f = document.createDocumentFragment();
+    list.forEach(function (m) { f.appendChild(build(m)); });
+    if (emptyEl.parentNode) emptyEl.remove();
+    box.appendChild(f); box.scrollTop = box.scrollHeight;
+  }
+  // One gate for every message, from a packet, a bundle or the saved copy. Gives a safe message, or null.
+  function clean(id, ts, n, x) {
+    if (typeof id !== 'string' || !/^[0-9a-z]{8,40}$/.test(id) || typeof x !== 'string' || !x ||
+      typeof ts !== 'number' || !(ts > 1e11 && ts < 1e14)) return null;
+    var text = x.slice(0, 4000);
+    if (enc.encode(JSON.stringify(text)).length > 15000) return null;    // it must fit in one packet when it is passed on
+    return { id: id, ts: ts, name: typeof n === 'string' && n ? n.slice(0, 30) : 'Friend', text: text };
+  }
+  function add(m) { m.h = h32(m.id); log.set(m.id, m); persist(msgRec(m)); }
+  // The other phone holds it. This is saved too, so "Delivered" is still there after a reload.
+  function delivered(m) { if (m.mine && m.state !== 'seen') { m.state = 'seen'; persist(msgRec(m)); } }
   function recent() { return Array.from(log.values()).sort(function (a, b) { return a.ts - b.ts; }).slice(-KEEP); }
 
   function sendMsg(m) {
     m.lastSent = Date.now();
-    return publish({ t: 'm', id: m.id, ts: m.ts, n: m.name, x: m.text }).then(function (n) {
+    var o = { t: 'm', id: m.id, ts: m.ts, n: m.name, x: m.text };
+    if (known) o.g = gen;       // before we know the room generation we say nothing: it counts as current
+    return publish(o).then(function (n) {
       if (n > 0 && m.state === 'sending') m.state = 'sent';
       updateStates();
     });
@@ -311,7 +384,7 @@ header h1{font-size:20px;margin:0}
     var now = Date.now();
     recent().forEach(function (m) {
       if (!m.mine || m.state === 'seen') return;
-      if (have && have.indexOf(m.id) >= 0) { m.state = 'seen'; return; }
+      if (have && have.indexOf(m.id) >= 0) { delivered(m); return; }
       if (now - (m.lastSent || 0) < 2500) return;
       sendMsg(m);
     });
@@ -319,30 +392,45 @@ header h1{font-size:20px;margin:0}
   }
   function beat() {
     if (!joined || !readyCount()) return;
-    publish({ t: 'p', n: me.name, h: recent().map(function (m) { return m.id; }) });
+    publish({ t: 'p', n: me.name, h: recent().map(function (m) { return m.id; }), g: gen, c: summary() });
   }
+  function kick() { var now = Date.now(); if (now - lastKick > 3000) { lastKick = now; beat(); } }
   function onReady() { beat(); resendUnseen(null); }
 
   function onPacket(o) {
     if (o.s === me.sid) return;
     var gap = Date.now() - o.at;
     if (Math.abs(gap) > SKEW) { if (!peerSeen) $('#clock-note').hidden = false; return; }   // old recording, or a wrong clock
+    // No generation, and sealed before the last delete: an old recording, played again.
+    if (o.t === 'm' && !okGen(o.g) && o.at < gen * 1000) return;
     $('#clock-note').hidden = true;
-    if (!clockOff.has(o.s)) clockOff.set(o.s, gap);
+    var fresh = !clockOff.has(o.s);
+    if (fresh) clockOff.set(o.s, gap);
     if (o.t !== 'b') { peerSeen = Date.now(); if (typeof o.n === 'string') peerName = o.n.slice(0, 30); setPeer(true); }
+    if (okGen(o.g)) {
+      if (o.g > gen) applyGen(o.g, true);
+      else if (o.g < gen) { if (o.t === 'p') kick(); return; }   // from a phone that has not heard about the delete
+      learn();
+    }
+    if (fresh && o.t !== 'b') kick();   // someone new came in: tell them at once what we hold
     if (o.t === 'm') {
-      if (typeof o.id !== 'string' || typeof o.x !== 'string') return;
       if (log.has(o.id)) { ack([o.id]); return; }
       // Put their send time on our clock, so both phones agree on the order. Never later than now.
-      var ts = Math.min(Date.now(), (+o.ts || o.at) + clockOff.get(o.s));
-      var m = { id: o.id, ts: ts, name: String(o.n || 'Friend').slice(0, 30), text: o.x.slice(0, 4000), mine: false, state: 'seen' };
-      log.set(m.id, m); render(m); ack([m.id]);
+      var m = clean(o.id, Math.min(Date.now(), (+o.ts || o.at) + clockOff.get(o.s)), o.n, o.x);
+      if (!m) return;
+      m.mine = false; m.state = 'seen';
+      add(m); render(m); ack([m.id]);
       $('#typing').hidden = true; clearTimeout(typingTimer);
     } else if (o.t === 'a') {
-      (Array.isArray(o.i) ? o.i : []).forEach(function (id) { var m = log.get(id); if (m && m.mine) m.state = 'seen'; });
+      (Array.isArray(o.i) ? o.i : []).forEach(function (id) { var m = log.get(id); if (m) delivered(m); });
       updateStates();
     } else if (o.t === 'p') {
+      onBeat(o);                                         // first: when the chats match, everything is delivered
       resendUnseen(Array.isArray(o.h) ? o.h : []);
+    } else if (o.t === 'k') {
+      onList(o);
+    } else if (o.t === 'M') {
+      onBundle(o);
     } else if (o.t === 'y') {
       $('#typing').hidden = false; clearTimeout(typingTimer);
       typingTimer = setTimeout(function () { $('#typing').hidden = true; }, TYPING_TTL);
@@ -357,13 +445,238 @@ header h1{font-size:20px;margin:0}
     if (!on) $('#typing').hidden = true;
   }
 
+  /* ---------- saved copy: IndexedDB, one encrypted record per message ---------- */
+  function ad(rk) { return enc.encode('saved:' + rk); }
+  function lock(obj, rk) {
+    var body = enc.encode(JSON.stringify(obj)), plain = new Uint8Array(Math.ceil((body.length + 1) / 128) * 128).fill(32);
+    plain.set(body, 0);
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv, additionalData: ad(rk) }, key, plain).then(function (ct) {
+      var out = new Uint8Array(12 + ct.byteLength); out.set(iv, 0); out.set(new Uint8Array(ct), 12); return out;
+    });
+  }
+  function unlock(bytes, rk) {
+    if (!(bytes instanceof Uint8Array) || bytes.length < 29) return Promise.resolve(null);
+    return crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(0, 12), additionalData: ad(rk) }, key, bytes.slice(12)).then(function (pt) {
+      var o = JSON.parse(dec.decode(pt)); return o && typeof o === 'object' ? o : null;
+    }).catch(function () { return null; });
+  }
+  function cant() { if (!noteShown) { noteShown = true; $('#save-note').hidden = false; } }
+  // Storage jobs run one after the other. A slow or blocked open only holds back saving, never the chat.
+  function job(fn) { if (chain) chain = chain.then(fn).catch(cant); }
+  function openStore() {
+    chain = new Promise(function (res) {
+      var over = false, t = 0;
+      var done = function (d) {
+        if (over) { if (d) d.close(); return; }          // the answer came after we stopped waiting
+        over = true; clearTimeout(t); db = d; if (!d) cant(); res();
+      };
+      t = setTimeout(function () { done(null); }, 6000);   // a database that never answers
+      try {
+        var q = indexedDB.open('r' + slot, 1);
+        q.onupgradeneeded = function () { q.result.createObjectStore('r'); };
+        q.onsuccess = function () { done(q.result); };
+        q.onerror = function () { done(null); };
+      } catch (e) { done(null); }
+    });
+  }
+  function tx(fn) {
+    return new Promise(function (res) {
+      try {
+        var t = db.transaction('r', 'readwrite'); fn(t.objectStore('r'));
+        t.oncomplete = function () { res(true); }; t.onerror = t.onabort = function () { res(false); };
+      } catch (e) { res(false); }
+    });
+  }
+  // Write records, each under a fresh random key. wipe = empty the store first, then write the chat as it is now.
+  function save(wipe, recs) {
+    var ep = epoch;
+    job(function () {
+      if (!db || (!wipe && ep !== epoch)) return;       // a delete came in between: these are old
+      if (wipe) recs = [{ k: 's', g: gen, y: known ? 1 : 0 }].concat(Array.from(log.values()).map(msgRec));
+      return Promise.all(recs.map(function (r) {
+        var k = hex(crypto.getRandomValues(new Uint8Array(12)));
+        return lock(r, k).then(function (v) { return { k: k, v: v }; });
+      })).then(function (rows) {
+        return tx(function (st) { if (wipe) st.clear(); rows.forEach(function (r) { st.put(r.v, r.k); }); });
+      }).then(function (ok) { if (!ok) cant(); });
+    });
+  }
+  function msgRec(m) { return { k: 'm', g: gen, id: m.id, ts: m.ts, n: m.name, x: m.text, w: m.mine ? 1 : 0, u: m.u ? 1 : 0, d: m.state === 'seen' ? 1 : 0 }; }
+  function persist(rec) { dirty.push(rec); if (!saveTimer) saveTimer = setTimeout(flush, 250); }
+  function flush() { clearTimeout(saveTimer); saveTimer = 0; if (dirty.length) { var b = dirty; dirty = []; save(false, b); } }
+  function restore() {
+    job(function () {
+      if (!db) return;
+      return new Promise(function (res) {
+        var rows = [];
+        try {
+          var q = db.transaction('r').objectStore('r').openCursor();
+          q.onsuccess = function () { var c = q.result; if (c) { rows.push({ k: String(c.key), v: c.value }); c.continue(); } else res(rows); };
+          q.onerror = function () { res(rows); };
+        } catch (e) { res(rows); }
+      }).then(function (rows) {
+        return Promise.all(rows.map(function (r) { return unlock(r.v, r.k); })).then(function (objs) { adoptSaved(rows, objs); });
+      });
+    });
+  }
+  function okGen(g) { return typeof g === 'number' && g >= 0 && g < 1e12 && g % 1 === 0; }
+  function adoptSaved(rows, objs) {
+    var top = 0, learned = false;
+    objs.forEach(function (o) {
+      if (!o || !okGen(o.g)) return;
+      if (o.g > top) { top = o.g; learned = false; }
+      if (o.k === 's' && o.g === top && o.y === 1) learned = true;
+    });
+    // The saved copy is at a higher generation: move there, but do not wipe. What was saved is the chat.
+    if (top > gen) applyGen(top, learned, true); else if (top === gen && learned) known = true;
+    var old = [], fresh = [], from = new Map();                 // from: message id -> the record it was read from
+    objs.forEach(function (o, i) {
+      if (!o || !okGen(o.g)) return;
+      if (o.g < gen) { old.push(rows[i].k); return; }          // from before a delete
+      var m = o.k === 'm' && o.g === gen ? clean(o.id, o.ts, o.n, o.x) : null;
+      if (!m) return;
+      var r = o.w !== 1 ? 0 : o.d === 1 ? 2 : 1, had = log.get(m.id);   // 0 theirs, 1 mine, 2 mine and delivered
+      if (had) {
+        // A second record of one message (saved when sent, saved again when delivered). Keep the better one.
+        if (!from.has(m.id)) return;                             // it came in while we were loading: tidied at the next load
+        if (r > (!had.mine ? 0 : had.state === 'seen' ? 2 : 1)) {
+          old.push(from.get(m.id)); from.set(m.id, rows[i].k); had.mine = true; had.state = r > 1 ? 'seen' : 'sent';
+        } else old.push(rows[i].k);
+        return;
+      }
+      m.mine = r > 0; m.state = r === 1 ? 'sent' : 'seen'; m.u = o.u === 1; m.h = h32(m.id);
+      if (m.ts > lastTs) lastTs = m.ts;                          // what we write next goes below everything saved
+      from.set(m.id, rows[i].k); log.set(m.id, m); fresh.push(m);
+    });
+    renderMany(fresh);
+    if (old.length) job(function () { return tx(function (st) { old.forEach(function (k) { st.delete(k); }); }); });
+  }
+
+  /* ---------- delete: the room moves to a new generation ---------- */
+  function resetTo(g, keep, soft) {
+    gen = g; epoch++; dirty = []; clearTimeout(saveTimer); saveTimer = 0;
+    outq = []; pend = []; sentAt.clear(); asked = {};
+    log.clear(); els.clear();
+    var box = $('#messages');
+    box.querySelectorAll('.msg').forEach(function (e) { e.remove(); });
+    box.appendChild(emptyEl);
+    keep.forEach(function (m) { m.u = !known; log.set(m.id, m); });
+    renderMany(Array.from(log.values()));
+    // soft = the generation comes from the saved copy itself: keep that copy, only add what was written meanwhile
+    if (soft) { if (keep.length) save(false, keep.map(msgRec)); } else save(true);
+  }
+  // A higher generation: drop the old chat. Messages this phone wrote before it knew the generation stay.
+  function applyGen(g, learned, soft) {
+    var keep = [];
+    if (!known) log.forEach(function (m) { if (m.mine && m.u) keep.push(m); });
+    known = !!learned || known;
+    resetTo(g, keep, soft);
+  }
+  function learn() { if (!known) { known = true; persist({ k: 's', g: gen, y: 1 }); } }
+
+  /* ---------- sync: compare, then send only what is missing ---------- */
+  function summary() {
+    var c = [], i;
+    for (i = 0; i < 16; i++) c.push([0, 0]);
+    log.forEach(function (m) { var b = c[m.h & 15]; b[0]++; b[1] = (b[1] ^ m.h) >>> 0; });
+    return c;
+  }
+  function onBeat(o) {
+    var c = o.c, mine = summary(), diff = [], i;
+    if (!Array.isArray(c) || c.length !== 16) return;
+    for (i = 0; i < 16; i++) {
+      if (!Array.isArray(c[i]) || typeof c[i][0] !== 'number' || typeof c[i][1] !== 'number') return;
+      if (c[i][0] !== mine[i][0] || (c[i][1] >>> 0) !== mine[i][1]) diff.push(i);
+    }
+    var tag = JSON.stringify(c), a = asked[o.s], now = Date.now();
+    if (!diff.length) { delete asked[o.s]; log.forEach(delivered); return; }   // the chats match: they hold all we wrote
+    if (a && a.k === tag && now - a.t < 12000) return;         // already answered this one a moment ago
+    asked[o.s] = { k: tag, t: now };
+    var by = {};
+    diff.forEach(function (b) { by[b] = []; });
+    log.forEach(function (m, id) { var l = by[m.h & 15]; if (l) l.push(id); });
+    var entries = [];
+    diff.forEach(function (b) {
+      var ids = by[b].sort(), lo = '', j;
+      if (!ids.length) entries.push([b, '', '￿', []]);
+      for (j = 0; j < ids.length; j += 250) {
+        var part = ids.slice(j, j + 250);
+        entries.push([b, lo, j + 250 >= ids.length ? '￿' : part[part.length - 1], part]);
+        lo = part[part.length - 1];
+      }
+    });
+    outq = outq.filter(function (p) { return p.t !== 'k'; });
+    var pk = [], n = 0;
+    entries.forEach(function (e) {
+      if (pk.length && n + e[3].length > 250) { outq.push({ t: 'k', g: gen, l: pk }); pk = []; n = 0; }
+      pk.push(e); n += e[3].length;
+    });
+    if (pk.length) outq.push({ t: 'k', g: gen, l: pk });
+    pump();
+  }
+  // They list the ids they hold in some buckets. Queue what they lack.
+  function onList(o) {
+    if (!Array.isArray(o.l)) return;
+    var now = Date.now();
+    o.l.slice(0, 16).forEach(function (e) {
+      if (!Array.isArray(e) || e.length !== 4 || typeof e[0] !== 'number' || e[0] < 0 || e[0] > 15 || e[0] % 1 !== 0 ||
+        typeof e[1] !== 'string' || typeof e[2] !== 'string' || e[1].length > 40 || e[2].length > 40 || !Array.isArray(e[3]) || e[3].length > 300) return;
+      var b = e[0], lo = e[1], hi = e[2], has = new Set(e[3]);
+      log.forEach(function (m, id) {
+        if ((m.h & 15) !== b) return;
+        if (has.has(id)) { delivered(m); return; }
+        if (id > lo && id <= hi && !(sentAt.get(id) > now - 20000)) { sentAt.set(id, now); pend.push(id); }
+      });
+    });
+    updateStates(); pump();
+  }
+  function bundle() {
+    var items = [], size = 0;
+    while (pend.length) {
+      var m = log.get(pend[0]);
+      if (!m) { pend.shift(); continue; }
+      var it = { id: m.id, ts: m.ts, n: m.name, x: m.text, w: m.mine ? 1 : 0 }, len = enc.encode(JSON.stringify(it)).length;
+      if (items.length && (size + len > 6500 || items.length >= 100)) break;
+      pend.shift(); items.push(it); size += len;
+    }
+    return items.length ? { t: 'M', g: gen, m: items } : null;
+  }
+  function onBundle(o) {
+    if (!Array.isArray(o.m)) return;
+    var off = clockOff.get(o.s) || 0, fresh = [], mineName = me.name.trim().toLowerCase();
+    o.m.slice(0, 100).forEach(function (e) {
+      var m = e && typeof e.ts === 'number' && !log.has(e.id) ? clean(e.id, Math.min(Date.now(), e.ts + off), e.n, e.x) : null;
+      if (!m) return;
+      // "me" when the phone that passes it on did not write it, and it carries this person's name
+      m.mine = !e.w && m.name.trim().toLowerCase() === mineName; m.state = 'seen';
+      add(m); fresh.push(m);
+    });
+    renderMany(fresh);
+  }
+  // Send queued packets one by one, about three a second.
+  function pump() {
+    if (pumpT) return;
+    var o = outq.shift() || bundle();
+    if (!o) return;
+    if (!readyCount()) { outq = []; pend = []; sentAt.clear(); return; }   // the next beat starts it again
+    publish(o);
+    pumpT = setTimeout(function () { pumpT = 0; pump(); }, 350);
+  }
+
   /* ---------- wiring ---------- */
-  function wake() { if (joined) relays.forEach(function (r) { r.wake(); }); beat(); }
-  document.addEventListener('visibilitychange', function () { if (!document.hidden) wake(); });
+  // Connect to the relays. This waits until the saved chat is loaded, so no packet can run ahead of it.
+  function start() {
+    if (started) return;
+    started = true; startedAt = Date.now();
+    relays.forEach(function (r) { r.connect(); });
+  }
+  function wake() { if (started) relays.forEach(function (r) { r.wake(); }); beat(); }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) flush(); else wake(); });
   window.addEventListener('online', wake);
   window.addEventListener('pageshow', wake);
   window.addEventListener('offline', refreshStatus);
-  window.addEventListener('pagehide', function () { if (joined) publish({ t: 'b' }); });
+  window.addEventListener('pagehide', function () { flush(); if (joined) publish({ t: 'b' }); });
 
   function fit() {
     var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -398,20 +711,33 @@ header h1{font-size:20px;margin:0}
       joined = true; startedAt = Date.now();
       $('#join-screen').hidden = true; $('#chat-screen').hidden = false;
       fit(); $('#text').focus();
-      relays.forEach(function (r) { r.connect(); });
+      openStore(); restore();
+      job(start);                    // connect once the saved chat is loaded
+      setTimeout(start, 9000);       // or after 9 seconds, if the storage is that slow
       setInterval(beat, BEAT);
       setInterval(function () {
         if (peerSeen && Date.now() - peerSeen > PEER_TTL) { peerSeen = 0; setPeer(false); }
         prune(); refreshStatus();
+        sentAt.forEach(function (t, id) { if (t < Date.now() - 60000) sentAt.delete(id); });
       }, 2000);
     }).catch(function () {
       $('#join').disabled = false; err.textContent = 'Something went wrong. Please try again.'; err.hidden = false;
     });
   });
 
-  // Leave: hide the chat at once, tell the other person, then reload. A reload wipes everything.
+  // Delete chat: ask first. Yes moves the room to a new generation and empties it here, at once.
+  $('#clear').addEventListener('click', function () { $('#clear-ask').hidden = false; });
+  $('#clear-no').addEventListener('click', function () { $('#clear-ask').hidden = true; });
+  $('#clear-yes').addEventListener('click', function () {
+    $('#clear-ask').hidden = true;
+    known = true;
+    resetTo(Math.max(gen + 1, Math.ceil(Date.now() / 1000)), []);
+    beat(); setTimeout(beat, 2000);
+  });
+
+  // Leave: hide the chat at once, tell the other person, then reload. The saved chat stays.
   $('#leave').addEventListener('click', function () {
-    $('#chat-screen').hidden = true;
+    $('#chat-screen').hidden = true; flush();
     var go = function () { location.reload(); };
     publish({ t: 'b' }).then(go, go);
     setTimeout(go, 800);
@@ -423,8 +749,8 @@ header h1{font-size:20px;margin:0}
     if (!text) return;
     box.value = ''; lastTypingSent = 0;
     lastTs = Math.max(Date.now(), lastTs + 1);
-    var m = { id: rid(14), ts: lastTs, name: me.name, text: text, mine: true, state: 'sending', lastSent: 0 };
-    log.set(m.id, m); render(m); refreshStatus();
+    var m = { id: rid(14), ts: lastTs, name: me.name, text: text, mine: true, state: 'sending', lastSent: 0, u: !known };
+    add(m); render(m); refreshStatus();
     sendMsg(m);
     box.focus();
   });
