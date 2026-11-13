@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<title>Room</title>
+<style>
+:root{--bg:#f4f5f7;--panel:#fff;--ink:#1b1f24;--soft:#5d6670;--line:#d8dce1;--me:#2563eb;--meink:#fff;--them:#e6e9ee;--warn:#fff3cd;--warnink:#5c4600;--ok:#1a9d4b;--bad:#c2410c;--vvh:100dvh}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1114;--panel:#181b20;--ink:#eceff3;--soft:#9aa3ad;--line:#2b3037;--me:#3b82f6;--meink:#fff;--them:#262b32;--warn:#3a3000;--warnink:#ffe9a0;--ok:#4ade80;--bad:#fb923c}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:17px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+[hidden]{display:none!important}
+input,button,textarea{font:inherit;font-size:16px}
+#join-screen{min-height:var(--vvh);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+#join-form{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+h1{margin:0 0 14px;font-size:26px}
+label{display:block;margin:12px 0 4px;font-weight:600}
+input[type=text],input[type=password]{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.pw-row{display:flex;gap:8px}
+.pw-row input{flex:1;min-width:0}
+.hint{margin:6px 0 0;color:var(--soft);font-size:15px}
+.hint.weak{color:var(--bad)}.hint.good{color:var(--ok)}
+.small{margin:14px 0 0;color:var(--soft);font-size:14px;text-align:center}
+button{border:0;border-radius:10px;background:var(--me);color:var(--meink);padding:12px 18px;font-weight:600;cursor:pointer}
+button.quiet{background:transparent;color:var(--ink);border:1px solid var(--line);padding:8px 12px;font-weight:500}
+#join{width:100%;margin-top:16px}
+button:disabled{opacity:.6}
+#chat-screen{height:var(--vvh);display:flex;flex-direction:column;max-width:720px;margin:0 auto;background:var(--panel)}
+header{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));border-bottom:1px solid var(--line)}
+header h1{font-size:20px;margin:0}
+.who{flex:1;min-width:0;font-size:14px;color:var(--soft);text-align:right}
+.who div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--soft);margin-right:5px}
+#peer[data-online=true] .dot{background:var(--ok)}
+#status[data-state=connected] .dot{background:var(--ok)}
+#status[data-state=offline] .dot{background:var(--bad)}
+.note{background:var(--warn);color:var(--warnink);padding:8px 14px;font-size:15px}
+#messages{flex:1;overflow-y:auto;padding:12px 12px 4px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
+.msg{max-width:82%;padding:8px 12px;border-radius:16px;background:var(--them);overflow-wrap:anywhere}
+.msg[data-from=me]{align-self:flex-end;background:var(--me);color:var(--meink)}
+.msg-name{font-size:13px;font-weight:700;opacity:.8}
+.msg-text{white-space:pre-wrap}
+.msg-meta{font-size:12px;opacity:.8;text-align:right}
+#empty{margin:auto;color:var(--soft);text-align:center;padding:0 12px}
+#empty small{display:block;margin-top:10px;font-size:14px}
+#typing{padding:2px 14px;color:var(--soft);font-size:14px}
+#composer{display:flex;gap:8px;padding:8px 12px;padding-bottom:max(8px,env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+#text{flex:1;min-width:0;padding:12px;border:1px solid var(--line);border-radius:22px;background:var(--bg);color:var(--ink)}
+#send{border-radius:22px}
+</style>
+</head>
+<body>
+<main id="join-screen">
+  <form id="join-form" autocomplete="off">
+    <h1>Room</h1>
+    <label for="name">Your name</label>
+    <input id="name" type="text" maxlength="30" autocomplete="off" placeholder="Your name">
+    <label for="password">Password</label>
+    <div class="pw-row">
+      <input id="password" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Password">
+      <button id="show" type="button" class="quiet">Show</button>
+    </div>
+    <p class="hint">Type the same password as the other person.</p>
+    <p id="pw-hint" class="hint">A long password is safer. Try 4 words in a row.</p>
+    <p id="join-error" class="hint weak" hidden></p>
+    <button id="join" type="submit">Go in</button>
+    <p class="small">Nothing is saved. Messages are gone when you close the page.</p>
+  </form>
+</main>
+<section id="chat-screen" hidden>
+  <header>
+    <h1>Room</h1>
+    <div class="who">
+      <div id="status" data-state="connecting"><span class="dot"></span><span id="status-text">Connecting...</span></div>
+      <div id="peer" data-online="false"><span class="dot"></span><span id="peer-text">Waiting for the other person</span></div>
+    </div>
+    <button id="leave" type="button" class="quiet">Leave</button>
+  </header>
+  <div id="notice" class="note" hidden>No connection. Your messages will go out when it is back.</div>
+  <div id="clock-note" class="note" hidden>The time on one phone looks wrong. Set the time to automatic on both phones.</div>
+  <div id="messages" aria-live="polite"><p id="empty">No messages yet. Say hello!<small>Is the other person here, but you cannot see them? Then one password is different. Tap Leave and type it again.</small></p></div>
+  <div id="typing" hidden>The other person is typing...</div>
+  <form id="composer" autocomplete="off">
+    <input id="text" type="text" maxlength="2000" enterkeyhint="send" autocomplete="off" placeholder="Type a message">
+    <button id="send" type="submit">Send</button>
+  </form>
+</section>
+<script>
+'use strict';
+/*
+  How it works. Everything is in this one file.
+
+  - The password is stretched with PBKDF2-SHA-256 (250,000 rounds) into 48 bytes.
+    Bytes 0-31 are the AES-256-GCM key. Bytes 32-47 name the meeting place (the topic).
+    The topic does not reveal the key or the password.
+  - Every packet on the wire is: 12 random bytes (nonce) + AES-GCM(JSON, padded with spaces
+    to 1024, 2048, 4096... bytes). The relays only see this. Padding hides how long a message is.
+  - JSON fields: v (version), s (sender id, random per page), at (sender clock when sealed), t (type):
+      m  message   {id, ts, n: name, x: text}
+      a  got it    {i: [ids]}
+      p  here      {n: name, h: [recent ids]}   every 8 s; the author re-sends what is missing
+      y  typing
+      b  leaving
+  - A packet is dropped when it does not decrypt (wrong password or changed), when its nonce was
+    seen before (a replay, or the same packet from a second relay), or when its clock is more than
+    10 minutes away from ours (an old recording).
+  - Nothing is written to storage. Closing or reloading the page wipes everything.
+*/
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  var RELAYS = ['wss://broker.hivemq.com:8884/mqtt', 'wss://broker.emqx.io:8084/mqtt', 'wss://test.mosquitto.org:8081/mqtt'];
+  var SALT = 'room-chat-v1-salt', ROUNDS = 250000, PAD = 1024, KEEP = 40, BEAT = 8000, PEER_TTL = 24000, TYPING_TTL = 6000, SKEW = 600000;
+  var enc = new TextEncoder(), dec = new TextDecoder();
+
+  /* ---------- state (memory only) ---------- */
+  var me = { name: '', sid: rid(16) };
+  var key = null, topic = '';
+  var log = new Map();      // id -> {id, ts, name, text, mine, state}
+  var els = new Map();      // id -> element
+  var seen = new Map();     // packet nonce -> time first seen (replay guard and relay dedupe)
+  var clockOff = new Map(); // sender id -> our clock minus their clock
+  var lastTs = 0, peerSeen = 0, peerName = '', typingTimer = 0, lastTypingSent = 0;
+  var joined = false, startedAt = 0, everReady = false;
+
+  function rid(n) { var a = crypto.getRandomValues(new Uint8Array(n)); return Array.prototype.map.call(a, function (b) { return (b % 36).toString(36); }).join(''); }
+  function hex(buf) { return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
+
+  /* ---------- crypto ---------- */
+  function derive(pw) {
+    return crypto.subtle.importKey('raw', enc.encode(pw.normalize('NFKC')), 'PBKDF2', false, ['deriveBits']).then(function (base) {
+      return crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(SALT), iterations: ROUNDS }, base, 384);
+    }).then(function (bits) {
+      topic = 'room/' + hex(bits.slice(32, 48));
+      return crypto.subtle.importKey('raw', bits.slice(0, 32), 'AES-GCM', false, ['encrypt', 'decrypt']);
+    }).then(function (k) { key = k; });
+  }
+  function seal(obj) {
+    obj.v = 1; obj.s = me.sid; obj.at = Date.now();
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    seen.set(hex(iv), obj.at);                       // our own packets come back from the relays: skip them
+    var body = enc.encode(JSON.stringify(obj)), size = PAD;
+    while (size < body.length) size *= 2;
+    var plain = new Uint8Array(size).fill(32); plain.set(body, 0);
+    return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, plain).then(function (ct) {
+      var out = new Uint8Array(12 + ct.byteLength); out.set(iv, 0); out.set(new Uint8Array(ct), 12); return out;
+    });
+  }
+  function open(bytes) {
+    if (bytes.length < 12 + PAD + 16) return Promise.resolve(null);
+    var nonce = hex(bytes.slice(0, 12));
+    if (seen.has(nonce)) return Promise.resolve(null);
+    return crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(0, 12) }, key, bytes.slice(12)).then(function (pt) {
+      if (seen.has(nonce)) return null;              // a second copy finished decrypting first
+      seen.set(nonce, Date.now());
+      var o = JSON.parse(dec.decode(pt));
+      return o && o.v === 1 && typeof o.s === 'string' && typeof o.at === 'number' ? o : null;
+    }).catch(function () { return null; });
+  }
+  function prune() { var old = Date.now() - 2 * SKEW; seen.forEach(function (t, k) { if (t < old) seen.delete(k); }); }
+
+  /* ---------- MQTT 3.1.1 over WebSocket ---------- */
+  function str(s) { var b = enc.encode(s); var o = new Uint8Array(2 + b.length); o[0] = b.length >> 8; o[1] = b.length & 255; o.set(b, 2); return o; }
+  function packet(first, parts) {
+    var len = 0; parts.forEach(function (p) { len += p.length; });
+    var head = [first], n = len;
+    do { var d = n % 128; n = Math.floor(n / 128); head.push(n ? d | 128 : d); } while (n);
+    var out = new Uint8Array(head.length + len); out.set(head, 0); var o = head.length;
+    parts.forEach(function (p) { out.set(p, o); o += p.length; });
+    return out;
+  }
+  function concat(a, b) { if (!a.length) return b; var o = new Uint8Array(a.length + b.length); o.set(a, 0); o.set(b, a.length); return o; }
+
+  function Relay(url) { this.url = url; this.ws = null; this.ready = false; this.tries = 0; this.timer = 0; this.ping = 0; this.lastRx = 0; this.buf = new Uint8Array(0); this.cto = 0; }
+  Relay.prototype.connect = function () {
+    var r = this;
+    if (r.ws && r.ws.readyState <= 1) return;
+    clearTimeout(r.timer);
+    var ws;
+    try { ws = new WebSocket(r.url, 'mqtt'); } catch (e) { r.schedule(); return; }
+    r.ws = ws; ws.binaryType = 'arraybuffer'; r.buf = new Uint8Array(0); r.lastRx = Date.now();
+    r.cto = setTimeout(function () { if (r.ws === ws && !r.ready) r.drop(); }, 10000);
+    ws.onopen = function () {
+      if (r.ws !== ws) return;
+      ws.send(packet(0x10, [str('MQTT'), new Uint8Array([4, 2, 0, 45]), str('rm-' + rid(12))]));
+    };
+    ws.onmessage = function (e) { if (r.ws === ws) { r.lastRx = Date.now(); r.feed(new Uint8Array(e.data)); } };
+    ws.onclose = function () { if (r.ws === ws) r.drop(); };
+    ws.onerror = function () {};
+  };
+  Relay.prototype.drop = function (fast) {
+    var r = this, ws = r.ws;
+    r.ws = null; r.ready = false; clearTimeout(r.cto); clearInterval(r.ping);
+    if (ws) { ws.onopen = ws.onmessage = ws.onclose = ws.onerror = null; try { ws.close(); } catch (e) {} }
+    r.schedule(fast);
+    refreshStatus();
+  };
+  Relay.prototype.schedule = function (fast) {
+    var r = this; clearTimeout(r.timer);
+    var d = fast ? 300 : Math.min(30000, 1000 * Math.pow(2, r.tries++)) * (0.6 + Math.random() * 0.4);
+    r.timer = setTimeout(function () { r.connect(); }, d);
+  };
+  Relay.prototype.feed = function (chunk) {
+    var r = this; r.buf = concat(r.buf, chunk);
+    while (r.buf.length >= 2) {
+      var i = 1, len = 0, mul = 1, b;
+      do { if (i >= r.buf.length) return; b = r.buf[i++]; len += (b & 127) * mul; mul *= 128; } while ((b & 128) && i < 5);
+      if (r.buf.length < i + len) return;
+      var first = r.buf[0], body = r.buf.slice(i, i + len);
+      r.buf = r.buf.slice(i + len);
+      r.packet(first, body);
+      if (!r.ws) return;
+    }
+  };
+  Relay.prototype.packet = function (first, p) {
+    var r = this, type = first >> 4;
+    if (type === 2) {
+      if (p[1] !== 0) { r.drop(); return; }
+      r.ws.send(packet(0x82, [new Uint8Array([0, 1]), str(topic), new Uint8Array([0])]));
+    } else if (type === 9) {
+      if (p[2] === 0x80) { r.drop(); return; }
+      r.ready = true; r.tries = 0; everReady = true; clearTimeout(r.cto);
+      clearInterval(r.ping);
+      r.ping = setInterval(function () {
+        if (!r.ws) return;
+        if (Date.now() - r.lastRx > 50000) { r.drop(true); return; }
+        try { r.ws.send(new Uint8Array([0xC0, 0])); } catch (e) { r.drop(true); }
+      }, 15000);
+      refreshStatus(); onReady();
+    } else if (type === 3) {
+      var tl = (p[0] << 8) | p[1], off = 2 + tl + (((first >> 1) & 3) ? 2 : 0);
+      open(p.slice(off)).then(function (o) { if (o) onPacket(o); });
+    }
+  };
+  // The page was asleep or the network changed: check each relay now, do not wait for a timeout.
+  Relay.prototype.wake = function () {
+    var r = this;
+    if (!r.ws) { r.tries = 0; r.connect(); return; }
+    if (!r.ready) { if (r.ws.readyState > 1) r.drop(true); return; }
+    var t0 = Date.now();
+    try { r.ws.send(new Uint8Array([0xC0, 0])); } catch (e) { r.drop(true); return; }
+    setTimeout(function () { if (r.ws && r.ready && r.lastRx < t0) r.drop(true); }, 3500);
+  };
+  var relays = RELAYS.map(function (u) { return new Relay(u); });
+  function readyCount() { return relays.filter(function (r) { return r.ready; }).length; }
+
+  // Publish one encrypted packet to every connected relay. Resolves to how many got it.
+  function publish(obj) {
+    return seal(obj).then(function (payload) {
+      var frame = packet(0x30, [str(topic), payload]), n = 0;
+      relays.forEach(function (r) { if (r.ready && r.ws && r.ws.readyState === 1) { try { r.ws.send(frame); n++; } catch (e) { r.drop(true); } } });
+      return n;
+    });
+  }
+
+  /* ---------- status ---------- */
+  function refreshStatus() {
+    if (!joined) return;
+    var s;
+    if (readyCount() > 0) s = 'connected';
+    else if (navigator.onLine === false || everReady || Date.now() - startedAt > 12000) s = 'offline';
+    else s = 'connecting';
+    $('#status').dataset.state = s;
+    $('#status-text').textContent = s === 'connected' ? 'Connected' : s === 'connecting' ? 'Connecting...' : 'No connection';
+    $('#notice').hidden = s !== 'offline';
+    updateStates();
+  }
+
+  /* ---------- messages ---------- */
+  function fmtTime(ts) { var d = new Date(ts); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function stateText(m) {
+    if (!m.mine) return '';
+    if (m.state === 'seen') return ' · Delivered';
+    if (m.state === 'sent') return ' · Sent';
+    return readyCount() ? ' · Sending...' : ' · Waiting for connection';
+  }
+  function updateStates() {
+    log.forEach(function (m, id) { if (m.mine && els.has(id)) els.get(id).querySelector('.msg-state').textContent = stateText(m); });
+  }
+  function render(m) {
+    var box = $('#messages'), nearEnd = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+    var e = document.createElement('div');
+    e.className = 'msg'; e.dataset.from = m.mine ? 'me' : 'them'; e.dataset.name = m.name; e.dataset.ts = m.ts; e.dataset.id = m.id;
+    var n = document.createElement('div'); n.className = 'msg-name'; n.textContent = m.name;
+    var t = document.createElement('div'); t.className = 'msg-text'; t.textContent = m.text;
+    var meta = document.createElement('div'); meta.className = 'msg-meta';
+    var tm = document.createElement('span'); tm.textContent = fmtTime(m.ts);
+    var sp = document.createElement('span'); sp.className = 'msg-state'; sp.textContent = stateText(m);
+    meta.appendChild(tm); meta.appendChild(sp);
+    e.appendChild(n); e.appendChild(t); e.appendChild(meta);
+    var before = null;
+    box.querySelectorAll('.msg').forEach(function (o) { if (!before && (+o.dataset.ts > m.ts || (+o.dataset.ts === m.ts && o.dataset.id > m.id))) before = o; });
+    box.insertBefore(e, before);
+    var empty = $('#empty'); if (empty) empty.remove();
+    els.set(m.id, e);
+    if (m.mine || nearEnd) box.scrollTop = box.scrollHeight;
+  }
+  function recent() { return Array.from(log.values()).sort(function (a, b) { return a.ts - b.ts; }).slice(-KEEP); }
+
+  function sendMsg(m) {
+    m.lastSent = Date.now();
+    return publish({ t: 'm', id: m.id, ts: m.ts, n: m.name, x: m.text }).then(function (n) {
+      if (n > 0 && m.state === 'sending') m.state = 'sent';
+      updateStates();
+    });
+  }
+  // have = the ids the other person says they hold (null when we only just connected).
+  function resendUnseen(have) {
+    var now = Date.now();
+    recent().forEach(function (m) {
+      if (!m.mine || m.state === 'seen') return;
+      if (have && have.indexOf(m.id) >= 0) { m.state = 'seen'; return; }
+      if (now - (m.lastSent || 0) < 2500) return;
+      sendMsg(m);
+    });
+    updateStates();
+  }
+  function beat() {
+    if (!joined || !readyCount()) return;
+    publish({ t: 'p', n: me.name, h: recent().map(function (m) { return m.id; }) });
+  }
+  function onReady() { beat(); resendUnseen(null); }
+
+  function onPacket(o) {
+    if (o.s === me.sid) return;
+    var gap = Date.now() - o.at;
+    if (Math.abs(gap) > SKEW) { if (!peerSeen) $('#clock-note').hidden = false; return; }   // old recording, or a wrong clock
+    $('#clock-note').hidden = true;
+    if (!clockOff.has(o.s)) clockOff.set(o.s, gap);
+    if (o.t !== 'b') { peerSeen = Date.now(); if (typeof o.n === 'string') peerName = o.n.slice(0, 30); setPeer(true); }
+    if (o.t === 'm') {
+      if (typeof o.id !== 'string' || typeof o.x !== 'string') return;
+      if (log.has(o.id)) { ack([o.id]); return; }
+      // Put their send time on our clock, so both phones agree on the order. Never later than now.
+      var ts = Math.min(Date.now(), (+o.ts || o.at) + clockOff.get(o.s));
+      var m = { id: o.id, ts: ts, name: String(o.n || 'Friend').slice(0, 30), text: o.x.slice(0, 4000), mine: false, state: 'seen' };
+      log.set(m.id, m); render(m); ack([m.id]);
+      $('#typing').hidden = true; clearTimeout(typingTimer);
+    } else if (o.t === 'a') {
+      (Array.isArray(o.i) ? o.i : []).forEach(function (id) { var m = log.get(id); if (m && m.mine) m.state = 'seen'; });
+      updateStates();
+    } else if (o.t === 'p') {
+      resendUnseen(Array.isArray(o.h) ? o.h : []);
+    } else if (o.t === 'y') {
+      $('#typing').hidden = false; clearTimeout(typingTimer);
+      typingTimer = setTimeout(function () { $('#typing').hidden = true; }, TYPING_TTL);
+    } else if (o.t === 'b') {
+      peerSeen = 0; setPeer(false);
+    }
+  }
+  function ack(ids) { publish({ t: 'a', i: ids }); }
+  function setPeer(on) {
+    $('#peer').dataset.online = on ? 'true' : 'false';
+    $('#peer-text').textContent = on ? (peerName ? peerName + ' is here' : 'The other person is here') : 'The other person is not here';
+    if (!on) $('#typing').hidden = true;
+  }
+
+  /* ---------- wiring ---------- */
+  function wake() { if (joined) relays.forEach(function (r) { r.wake(); }); beat(); }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) wake(); });
+  window.addEventListener('online', wake);
+  window.addEventListener('pageshow', wake);
+  window.addEventListener('offline', refreshStatus);
+  window.addEventListener('pagehide', function () { if (joined) publish({ t: 'b' }); });
+
+  function fit() {
+    var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    document.documentElement.style.setProperty('--vvh', h + 'px');
+    if (joined) { var b = $('#messages'); b.scrollTop = b.scrollHeight; }
+  }
+  fit();
+  if (window.visualViewport) { window.visualViewport.addEventListener('resize', fit); window.visualViewport.addEventListener('scroll', function () { window.scrollTo(0, 0); }); }
+  window.addEventListener('resize', fit);
+
+  $('#password').addEventListener('input', function () {
+    var n = $('#password').value.length, h = $('#pw-hint');
+    h.className = 'hint' + (n >= 20 ? ' good' : n ? ' weak' : '');
+    h.textContent = !n ? 'A long password is safer. Try 4 words in a row.' : n < 20 ? 'Make it longer. Four words in a row is a good password.' : 'Good. That is a strong password.';
+  });
+  $('#show').addEventListener('click', function () {
+    var p = $('#password'), hide = p.type === 'text';
+    p.type = hide ? 'password' : 'text';
+    $('#show').textContent = hide ? 'Show' : 'Hide';
+  });
+
+  $('#join-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = $('#name').value.trim(), pw = $('#password').value, err = $('#join-error');
+    err.hidden = true;
+    if (!name) { err.textContent = 'Type your name first.'; err.hidden = false; return; }
+    if (!pw) { err.textContent = 'Type the password first.'; err.hidden = false; return; }
+    $('#join').disabled = true;
+    me.name = name.slice(0, 30);
+    derive(pw).then(function () {
+      $('#password').value = ''; $('#password').type = 'password';
+      joined = true; startedAt = Date.now();
+      $('#join-screen').hidden = true; $('#chat-screen').hidden = false;
+      fit(); $('#text').focus();
+      relays.forEach(function (r) { r.connect(); });
+      setInterval(beat, BEAT);
+      setInterval(function () {
+        if (peerSeen && Date.now() - peerSeen > PEER_TTL) { peerSeen = 0; setPeer(false); }
+        prune(); refreshStatus();
+      }, 2000);
+    }).catch(function () {
+      $('#join').disabled = false; err.textContent = 'Something went wrong. Please try again.'; err.hidden = false;
+    });
+  });
+
+  // Leave: hide the chat at once, tell the other person, then reload. A reload wipes everything.
+  $('#leave').addEventListener('click', function () {
+    $('#chat-screen').hidden = true;
+    var go = function () { location.reload(); };
+    publish({ t: 'b' }).then(go, go);
+    setTimeout(go, 800);
+  });
+
+  $('#composer').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var box = $('#text'), text = box.value.trim();
+    if (!text) return;
+    box.value = ''; lastTypingSent = 0;
+    lastTs = Math.max(Date.now(), lastTs + 1);
+    var m = { id: rid(14), ts: lastTs, name: me.name, text: text, mine: true, state: 'sending', lastSent: 0 };
+    log.set(m.id, m); render(m); refreshStatus();
+    sendMsg(m);
+    box.focus();
+  });
+  $('#send').addEventListener('mousedown', function (e) { e.preventDefault(); });
+  $('#text').addEventListener('input', function () {
+    if (!$('#text').value || !joined) return;
+    var now = Date.now();
+    if (now - lastTypingSent > 2000) { lastTypingSent = now; publish({ t: 'y' }); }
+  });
+})();
+</script>
+</body>
+</html>
