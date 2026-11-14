@@ -81,7 +81,11 @@ header h1{font-size:20px;margin:0}
 @keyframes shimmer{from{background-position:100% 0}to{background-position:-100% 0}}
 @keyframes launch{40%{transform:translateY(-9px);opacity:0}41%{transform:translateY(9px);opacity:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
-#tools{display:flex;justify-content:flex-end;gap:4px;padding:6px 10px 0}
+#tools{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;padding:6px 10px 0}
+.msg-loc span,.msg-loc a{display:block}
+.msg-loc .loc-pos{font-size:13px;opacity:.8}
+.msg-loc a{margin-top:4px;color:inherit;font-weight:600}
+.msg-loc button{display:block;margin-top:8px;padding:8px 14px;font-size:15px}
 #tools button{padding:4px 10px;font-size:13px;color:var(--soft);border-color:transparent}
 #clear-ask p{margin:0 0 8px}
 #clear-ask button{margin-right:8px;padding:8px 14px}
@@ -152,6 +156,7 @@ header h1{font-size:20px;margin:0}
     <div class="who">
       <div id="status" data-state="connecting"><span class="dot"></span><span id="status-text">Connecting...</span></div>
       <div id="peer" data-online="false"><span class="dot"></span><span id="peer-text">Waiting for the other person</span></div>
+      <div id="last" hidden></div>
     </div>
     <button id="leave" type="button" class="quiet">Leave</button>
   </header>
@@ -159,7 +164,8 @@ header h1{font-size:20px;margin:0}
   <div id="clock-note" class="note" hidden>The time on one phone looks wrong. Set the time to automatic on both phones.</div>
   <div id="save-note" class="note" hidden>Your chat cannot be saved on this phone. You can still chat.</div>
   <div id="pic-note" class="note" hidden>That photo could not be sent. Try another one.</div>
-  <div id="tools"><button id="bell" type="button" class="quiet" aria-expanded="false">Notifications</button><button id="clear" type="button" class="quiet">Delete chat</button></div>
+  <div id="loc-note" class="note" hidden>Your location could not be read. Turn on location for this page. Then try again.</div>
+  <div id="tools"><button id="loc" type="button" class="quiet">Ask for location</button><button id="bell" type="button" class="quiet" aria-expanded="false">Notifications</button><button id="clear" type="button" class="quiet">Delete chat</button></div>
   <div id="clear-ask" class="note" hidden>
     <p>Delete this chat for both of you? It cannot be undone.</p>
     <button id="clear-yes" type="button">Yes, delete it</button><button id="clear-no" type="button" class="quiet">No, keep it</button>
@@ -184,7 +190,7 @@ header h1{font-size:20px;margin:0}
     </ol>
     <ul class="hint">
       <li>The notification says "Room: New message". It does not show the message, or who wrote it. Open the room to read it.</li>
-      <li>The message itself comes when you are both in the room.</li>
+      <li>The message waits for you. You get it when you open the room. A photo comes when you are both in the room.</li>
       <li>You can turn it off at any time. Tap "Turn off". Then nothing is sent to your phone.</li>
       <li>The code belongs to your name. Type the same name every time.</li>
       <li>This uses the free service ntfy.sh. It can see that a message was sent, and when. It can never see what the message says.</li>
@@ -221,19 +227,22 @@ header h1{font-size:20px;margin:0}
   - Opened: the "got it" packet also says o: 1 when the message is on the screen of the other
     person (the page is in view). Then it shows "Opened", not "Delivered". Old pages ignore o.
   - JSON fields: v (version), s (sender id, random per page), at (sender clock when sealed), t (type):
-      m  message   {id, ts, n: name, x: text, g, im}   im = {n, z, w, h} when it is a photo
+      m  message   {id, ts, n: name, x: text, g, im, lc}   im = {n, z, w, h} when it is a photo;
+                   lc = 1 "where are you?" or [lat, lon, metres] a location (see Location)
       i  photo     {g, id, k, d}   piece k of the photo of message id (9000 bytes, base64)
       q  ask       {g, id, k: [pieces]}   "send me these pieces of that photo"
       a  got it    {i: [ids], o}
-      p  here      {n: name, h: [recent ids], g, c, w}   every 8 s; the author re-sends what is missing
+      p  here      {n: name, h: [recent ids], g, c, w, d}   every 8 s; the author re-sends what is missing;
+                   d = seconds since this person last touched the page
       k  my list   {g, l: [[bucket, after id, up to id, [ids]]]}
       M  bundle    {g, m: [{id, ts, n, x, w}]}   w = 1: the phone that passes it on wrote it
       y  typing
       b  leaving
-      w  choices   {w}   for notifications; the one packet that a relay keeps (see Notifications)
+      w  choices   {w}   for notifications; a relay keeps it (see Notifications)
+      u  box       {n: name, g, m: [{id, ts, x, im, lc}], h: [ids]}   a relay keeps it (see Waiting messages)
   - A packet is dropped when it does not decrypt (wrong password or changed), when its nonce was
     seen before (a replay, or the same packet from a second relay), or when its clock is more than
-    10 minutes away from ours (an old recording). Only the kept packet 'w' may be older.
+    10 minutes away from ours (an old recording). Only the kept packets 'w' and 'u' may be older.
   - Every message passes one gate (clean) before it is used: from a packet, from a bundle and from
     the saved copy. Text is only ever shown with textContent.
   - Saved chat: IndexedDB, one encrypted record per message plus small encrypted state records. Record
@@ -265,8 +274,8 @@ header h1{font-size:20px;margin:0}
     The choices also rest on the relays, so a phone learns them when it opens the room, also when
     the other person is not there: packet 'w', sealed and padded like every packet, sent with the
     MQTT "retain" flag to a second topic (the topic + "/w"; older pages never ask for it). A relay
-    keeps the last one and hands it to every page that connects. It is the only thing a relay keeps,
-    and only once somebody used the switch. An old copy does no harm: the newer choice of a name wins.
+    keeps the last one and hands it to every page that connects. A relay keeps it
+    only once somebody used the switch. An old copy does no harm: the newer choice of a name wins.
     After it connects, the page waits 2 seconds before it sends a request, so the choices are in first.
     When a message is written, the page sends ntfy.sh one small request for each person who turned
     it on and is not in the room (a page in the room is in view: looking away signs out), and for
@@ -275,6 +284,21 @@ header h1{font-size:20px;margin:0}
     a tap opens it: never a name, never the text. At most one per person in two minutes, unless
     that person came into the room in between. That limit lives in memory: signing out forgets it.
     Nothing goes to ntfy.sh as long as nobody in the room turned it on or asked for a test.
+  - Waiting messages: every person has a "box" on the relays: packet 'u', sealed and padded like
+    every packet, sent with the MQTT "retain" flag to the topic + "/u/" + a code for the name (HMAC
+    with the key from bytes 64-95; older pages never ask for it). A relay keeps the last one and
+    hands it to every page that connects. The box holds what this person wrote and nobody got yet
+    (m: the 30 newest at most; of a photo only the small message, the bytes come when both are in
+    the room) and the ids of the last messages this person got from others (h). So a message reaches
+    a person who opens the room alone, and the writer later sees "Delivered", also alone. The box is
+    sent again a moment after its content changes, once a minute, and when the page signs out.
+    Everything in it is taken in the same way as from a bundle; an old copy does no harm.
+  - Last here: the time a box was sealed (at) is the last time that person was in the room. It
+    is shown when they are not here. While they are here, the beat says how long ago they touched
+    the page (d). A page can only know about itself: nothing about the rest of the phone.
+  - Location: "Ask for location" writes a message with lc: 1. The other person sees a button. Only
+    a tap on it reads the place (the browser asks for permission) and writes one message with
+    lc: [lat, lon, metres]. Nothing is read or sent without that tap, and nothing is followed.
   - Safety: a content security policy (no outside scripts; only the three relays and, for
     notifications, ntfy.sh), no framing, a second tap before a short password is used, and the
     cover after 10 minutes without a touch.
@@ -315,6 +339,9 @@ header h1{font-size:20px;margin:0}
   var here = new Map();     // sender id -> {n: plain name, t: last heard}
   var told = new Map(), failedAt = new Map(), busy = new Set();   // per name: last knock, last failed try, one on its way
   var wrote = [];           // messages written here that may still need a knock: {m, t, due: [names], late}
+  var boxId = '', boxT = 0, boxTag = '', boxAt = 0;   // the box of waiting messages that the relays keep for this person
+  var awayAt = 0, peerAct = 0;                        // when the other person was last here; when they last touched the page
+  var locT = 0;
   var noteVer = 0, readyAt = 0, tellT = 0;   // readyAt: when the first relay connected; tellT: the choices go to the relays soon
 
   /* ---------- cover: what the page turns into when you look away ---------- */
@@ -376,7 +403,7 @@ header h1{font-size:20px;margin:0}
     flush(); lastKnocks();
     try { sessionStorage.setItem(COVER_KEY, String(i)); } catch (e) {}
     var go = function () { location.reload(); };
-    publish({ t: 'b' }).then(go, go);
+    bye().then(go, go);
     setTimeout(go, 800);
   }
   // The page loaded itself again after looking away: show the cover, this one time only.
@@ -482,7 +509,8 @@ header h1{font-size:20px;margin:0}
     if (type === 2) {
       if (p[1] !== 0) { r.drop(); return; }
       // two topics in one request: the room, and the kept packet with the choices for notifications
-      r.ws.send(packet(0x82, [new Uint8Array([0, 1]), str(topic), new Uint8Array([0]), str(topic + '/w'), new Uint8Array([0])]));
+      r.ws.send(packet(0x82, [new Uint8Array([0, 1]), str(topic), new Uint8Array([0]), str(topic + '/w'), new Uint8Array([0]),
+        str(topic + '/u/+'), new Uint8Array([0])]));   // and the kept boxes of waiting messages
     } else if (type === 9) {
       if (p[2] === 0x80) { r.drop(); return; }
       r.ready = true; r.tries = 0; everReady = true; clearTimeout(r.cto);
@@ -514,7 +542,7 @@ header h1{font-size:20px;margin:0}
   // keep: the relay keeps this packet (MQTT "retain") on the second topic. Only the choices 'w' use it.
   function publish(obj, keep) {
     return seal(obj).then(function (payload) {
-      var frame = packet(keep ? 0x31 : 0x30, [str(keep ? topic + '/w' : topic), payload]), n = 0;
+      var frame = packet(keep ? 0x31 : 0x30, [str(keep ? topic + keep : topic), payload]), n = 0;   // keep: '/w', or '/u/' + a box
       relays.forEach(function (r) { if (r.ready && r.ws && r.ws.readyState === 1) { try { r.ws.send(frame); n++; } catch (e) { r.drop(true); } } });
       return n;
     });
@@ -569,7 +597,7 @@ header h1{font-size:20px;margin:0}
     var e = document.createElement('div');
     e.className = 'msg'; e.dataset.from = m.mine ? 'me' : 'them'; e.dataset.name = m.name; e.dataset.ts = m.ts; e.dataset.id = m.id;
     var n = document.createElement('div'); n.className = 'msg-name'; n.textContent = m.name;
-    var t; if (m.im) t = picBox(m); else { t = document.createElement('div'); t.className = 'msg-text'; t.textContent = m.text; }
+    var t; if (m.im) t = picBox(m); else if (m.lc) t = locBox(m); else { t = document.createElement('div'); t.className = 'msg-text'; t.textContent = m.text; }
     var meta = document.createElement('div'); meta.className = 'msg-meta';
     var tm = document.createElement('span'); tm.textContent = fmtTime(m.ts);
     var sp = document.createElement('span'); sp.className = 'msg-state'; sp.textContent = stateText(m);
@@ -605,7 +633,7 @@ header h1{font-size:20px;margin:0}
   }
   // One gate for every message, from a packet, a bundle or the saved copy. Gives a safe message, or null.
   function int(v, lo, hi) { return typeof v === 'number' && v % 1 === 0 && v >= lo && v <= hi; }
-  function clean(id, ts, n, x, im) {
+  function clean(id, ts, n, x, im, lc) {
     if (typeof id !== 'string' || !/^[0-9a-z]{8,40}$/.test(id) || typeof x !== 'string' || !x ||
       typeof ts !== 'number' || !(ts > 1e11 && ts < 1e14)) return null;
     var text = x.slice(0, 4000);
@@ -613,11 +641,19 @@ header h1{font-size:20px;margin:0}
     var m = { id: id, ts: ts, name: typeof n === 'string' && n ? n.slice(0, 30) : 'Friend', text: text };
     if (im && typeof im === 'object' && int(im.n, 1, 80) && int(im.z, 1, 720000) && int(im.w, 1, 8192) && int(im.h, 1, 8192) &&
       im.n === Math.ceil(im.z / CHUNK)) m.im = { n: im.n, z: im.z, w: im.w, h: im.h };
+    else if (lc === 1) m.lc = 1;                                         // a request for the place
+    else if (lc !== undefined && okLoc(lc)) m.lc = okLoc(lc);            // a place
     return m;
   }
-  function add(m) { m.h = h32(m.id); log.set(m.id, m); persist(msgRec(m)); }
+  // A place: [lat, lon, how many metres it may be off]. Gives a tidy copy, or null.
+  function okLoc(l) {
+    if (!Array.isArray(l) || l.length !== 3 || typeof l[0] !== 'number' || typeof l[1] !== 'number' || typeof l[2] !== 'number' ||
+      !(Math.abs(l[0]) <= 90) || !(Math.abs(l[1]) <= 180) || !(l[2] >= 0)) return null;
+    return [Math.round(l[0] * 1e5) / 1e5, Math.round(l[1] * 1e5) / 1e5, Math.min(1e7, Math.round(l[2]))];
+  }
+  function add(m) { m.h = h32(m.id); log.set(m.id, m); persist(msgRec(m)); boxSoon(); }
   // The other phone holds it. This is saved too, so "Delivered" is still there after a reload.
-  function delivered(m) { if (m.mine && m.state !== 'seen' && m.state !== 'opened') { m.state = 'seen'; persist(msgRec(m)); } }
+  function delivered(m) { if (m.mine && m.state !== 'seen' && m.state !== 'opened') { m.state = 'seen'; persist(msgRec(m)); boxSoon(); } }
   // It is on their screen.
   function opened(m) { if (m.mine && m.state !== 'opened') { m.state = 'opened'; persist(msgRec(m)); } }
   function recent() { return Array.from(log.values()).sort(function (a, b) { return a.ts - b.ts; }).slice(-KEEP); }
@@ -626,6 +662,7 @@ header h1{font-size:20px;margin:0}
     m.lastSent = Date.now();
     var o = { t: 'm', id: m.id, ts: m.ts, n: m.name, x: m.text };
     if (m.im) o.im = m.im;
+    if (m.lc) o.lc = m.lc;
     if (known) o.g = gen;       // before we know the room generation we say nothing: it counts as current
     return publish(o).then(function (n) {
       if (n > 0 && m.state === 'sending') m.state = 'sent';
@@ -647,26 +684,35 @@ header h1{font-size:20px;margin:0}
     if (!joined || !readyCount()) return;
     var o = { t: 'p', n: me.name, h: recent().map(function (m) { return m.id; }), g: gen, c: summary() };
     if (want.size) o.w = wantList();     // the choices for notifications on the phone, as far as we know them
+    o.d = Math.max(0, Math.floor((Date.now() - lastAct) / 1000));   // how long ago this person touched the page
     publish(o);
   }
   function kick() { var now = Date.now(); if (now - lastKick > 3000) { lastKick = now; beat(); } }
   function onReady() {
     if (readyCount() === 1) readyAt = Date.now();     // the first relay is there
     beat(); resendUnseen(null); knocks(); tellSoon(2500);
+    boxTag = ''; boxSoon(2000);          // this relay may hold an old box, or none
   }
 
   function onPacket(o) {
     if (o.s === me.sid) return;
     // The choices that a relay kept. They may be old, and say nothing about who is here now.
     if (o.t === 'w') { heard(o.w); return; }
+    // A box that a relay kept: what one person wrote and nobody got yet. It may be old too.
+    if (o.t === 'u') { onBox(o); return; }
     var gap = Date.now() - o.at;
     if (Math.abs(gap) > SKEW) { if (!peerSeen) $('#clock-note').hidden = false; return; }   // old recording, or a wrong clock
     // No generation, and sealed before the last delete: an old recording, played again.
     if (o.t === 'm' && !okGen(o.g) && o.at < gen * 1000) return;
     $('#clock-note').hidden = true;
     var fresh = !clockOff.has(o.s);
-    if (fresh) clockOff.set(o.s, gap);
-    if (o.t !== 'b') { peerSeen = Date.now(); if (typeof o.n === 'string') peerName = o.n.slice(0, 30); setPeer(true); }
+    if (fresh) { clockOff.set(o.s, gap); boxClock(o.s, gap); }
+    if (o.t !== 'b') {
+      peerSeen = Date.now(); if (typeof o.n === 'string') peerName = o.n.slice(0, 30);
+      if (o.t === 'p' && int(o.d, 0, 1e6)) peerAct = Date.now() - o.d * 1000;
+      else if (o.t === 'm' || o.t === 'y') peerAct = Date.now();   // they wrote: they are at the page now
+      setPeer(true);
+    }
     // Who is in the room, by name. A page in the room is in view: looking away signs out.
     if (o.t === 'b') here.delete(o.s);
     else {
@@ -687,7 +733,7 @@ header h1{font-size:20px;margin:0}
     if (o.t === 'm') {
       if (log.has(o.id)) { ack([o.id]); return; }
       // Put their send time on our clock, so both phones agree on the order. Never later than now.
-      var m = clean(o.id, Math.min(Date.now(), (+o.ts || o.at) + clockOff.get(o.s)), o.n, o.x, o.im);
+      var m = clean(o.id, Math.min(Date.now(), (+o.ts || o.at) + clockOff.get(o.s)), o.n, o.x, o.im, o.lc);
       if (!m) return;
       m.mine = false; m.state = 'seen';
       if (m.im && !pics.has(m.id)) pics.set(m.id, { parts: new Array(m.im.n), got: 0, t: Date.now() });   // the pieces follow
@@ -724,12 +770,94 @@ header h1{font-size:20px;margin:0}
   function ackLater() { if (unopened.length && !document.hidden) { var i = unopened; unopened = []; ack(i); } }
   // Someone new came in: tell them again which of their last messages were opened here (a "got it" can get lost).
   function reopen() { ack(recent().filter(function (m) { return !m.mine; }).map(function (m) { return m.id; })); }
+  /* ---------- waiting messages: one kept box per person ---------- */
+  function boxBody() {
+    var all = Array.from(log.values()).sort(function (a, b) { return b.ts - a.ts; }), items = [], h = [], size = 0;
+    all.forEach(function (m) {
+      if (!m.mine) { if (h.length < KEEP) h.push(m.id); return; }
+      if (m.state === 'seen' || m.state === 'opened' || items.length >= 30) return;
+      var it = { id: m.id, ts: m.ts, x: m.text };
+      if (m.im) it.im = m.im;
+      if (m.lc) it.lc = m.lc;
+      var len = enc.encode(JSON.stringify(it)).length;
+      if (size + len > 13000) return;                    // the box is one packet: 16384 bytes at most
+      items.push(it); size += len;
+    });
+    return { t: 'u', n: me.name, g: gen, m: items, h: h };
+  }
+  // Put the box on the relays. Not when nothing changed, unless a minute went by (its time says "last here").
+  function boxSend(force) {
+    clearTimeout(boxT); boxT = 0;
+    if (!joined || !boxId || !readyCount()) return Promise.resolve(0);
+    var o = boxBody(), tag = JSON.stringify([o.g, o.m.map(function (e) { return e.id; }), o.h]);
+    if (!force && tag === boxTag && Date.now() - boxAt < 60000) return Promise.resolve(0);
+    boxTag = tag; boxAt = Date.now();
+    return publish(o, '/u/' + boxId);
+  }
+  function boxSoon(ms) { if (!boxT) boxT = setTimeout(function () { boxSend(); }, ms || 1000); }
+  // This page signs out: the box (it holds what nobody got yet) and "leaving". Both start at once,
+  // so "leaving" does not wait for the box when the page is being closed.
+  function bye() {
+    var no = function () {};
+    var wait = function () { return new Promise(function (res) { setTimeout(res, 120); }); };   // let the packets leave
+    var box, b;
+    try { box = boxSend(true).then(no, no); } catch (e) { box = Promise.resolve(); }
+    try { b = publish({ t: 'b' }).then(no, no); } catch (e) { b = Promise.resolve(); }
+    return Promise.all([box, b]).then(wait, wait);
+  }
+  // The page that wrote a box is here now, and we know its clock: set the times of what came from that box,
+  // so the order is the same on both phones.
+  function boxClock(sid, gap) {
+    var box = $('#messages'), moved = [];
+    log.forEach(function (m) { if (m.bs === sid) { delete m.bs; if (gap) { m.ts = Math.min(Date.now(), m.ts + gap); moved.push(m); } } });
+    if (!moved.length) return;
+    moved.forEach(function (m) { var e = els.get(m.id), nx = e && e.nextElementSibling; if (e) { e.remove(); mark(nx); } persist(msgRec(m)); });
+    moved.sort(function (a, b) { return a.ts - b.ts || (a.id < b.id ? -1 : 1); });
+    moved.forEach(function (m) { render(m); var e = els.get(m.id); if (e) e.classList.remove('in'); });
+    box.scrollTop = box.scrollHeight;
+  }
+  function onBox(o) {
+    var nm = norm(o.n);
+    if (!nm || nm === myName) return;                    // no name, or my own box from the last time
+    var at = Math.min(Date.now(), o.at);
+    if (at > awayAt) { awayAt = at; if (!peerName) peerName = String(o.n).slice(0, 30); lastLine(); }
+    if (!okGen(o.g)) return;
+    if (o.g > gen) applyGen(o.g, true); else if (o.g < gen) return;   // a box from before a delete
+    learn();
+    // Their clock against ours. Not known yet when they are away: then the time is set right when they come in.
+    var fresh = [], off = clockOff.get(o.s);
+    (Array.isArray(o.m) ? o.m : []).slice(0, 40).forEach(function (e) {
+      var m = e && typeof e.ts === 'number' && !log.has(e.id) ? clean(e.id, Math.min(Date.now(), e.ts + (off || 0)), o.n, e.x, e.im, e.lc) : null;
+      if (!m) return;
+      m.mine = false; m.state = 'seen';
+      if (off === undefined) m.bs = o.s;
+      add(m); fresh.push(m);
+    });
+    renderMany(fresh);
+    ack(fresh.map(function (m) { return m.id; }));
+    // What they hold of ours: delivered.
+    (Array.isArray(o.h) ? o.h : []).slice(0, 80).forEach(function (id) { var m = typeof id === 'string' && log.get(id); if (m) delivered(m); });
+    updateStates();
+  }
+  // Under the name: how long ago they touched the page, or when they were last here.
+  function when(t) { var d = dayOf(t); return (d === 'Today' ? 'today' : d === 'Yesterday' ? 'yesterday' : d) + ' ' + fmtTime(t); }
+  function lastLine() {
+    var txt = '';
+    if (peerSeen) {
+      if (peerAct) { var mins = Math.floor((Date.now() - peerAct) / 60000); txt = mins < 1 ? 'Active now' : 'Active ' + mins + ' min ago'; }
+    } else if (awayAt) txt = 'Last here: ' + when(awayAt);
+    var e = $('#last');
+    if (e.textContent !== txt) e.textContent = txt;
+    e.hidden = !txt;
+  }
   function setPeer(on) {
+    if (!on && $('#peer').dataset.online === 'true') { awayAt = Date.now(); peerAct = 0; }   // they left just now
     $('#peer').dataset.online = on ? 'true' : 'false';
     $('#peer-text').textContent = on ? (peerName ? peerName + ' is here' : 'The other person is here') : 'The other person is not here';
     $('#here').dataset.on = on ? 'true' : 'false';
     if (on) $('#face').textContent = (peerName || '?').charAt(0).toUpperCase();
     if (!on) $('#typing').hidden = true;
+    lastLine();
   }
 
   /* ---------- saved copy: IndexedDB, one encrypted record per message ---------- */
@@ -789,7 +917,7 @@ header h1{font-size:20px;margin:0}
       }).then(function (ok) { if (!ok) cant(); });
     });
   }
-  function msgRec(m) { return { k: 'm', g: gen, id: m.id, ts: m.ts, n: m.name, x: m.text, im: m.im, w: m.mine ? 1 : 0, u: m.u ? 1 : 0, d: m.state === 'opened' ? 2 : m.state === 'seen' ? 1 : 0 }; }
+  function msgRec(m) { return { k: 'm', g: gen, id: m.id, ts: m.ts, n: m.name, x: m.text, im: m.im, lc: m.lc, w: m.mine ? 1 : 0, u: m.u ? 1 : 0, d: m.state === 'opened' ? 2 : m.state === 'seen' ? 1 : 0 }; }
   function picRec(id) { return { k: 'i', g: gen, id: id, d: b64(pics.get(id).bytes) }; }
   // The records of these messages, and of their photos.
   function recsFor(list) {
@@ -837,7 +965,7 @@ header h1{font-size:20px;margin:0}
         if (typeof o.id === 'string' && typeof o.d === 'string' && o.d.length < 1e6) { try { setPic(o.id, unb64(o.d), true); } catch (e) {} }
         return;
       }
-      var m = o.k === 'm' && o.g === gen ? clean(o.id, o.ts, o.n, o.x, o.im) : null;
+      var m = o.k === 'm' && o.g === gen ? clean(o.id, o.ts, o.n, o.x, o.im, o.lc) : null;
       if (!m) return;
       var r = o.w !== 1 ? 0 : o.d === 2 ? 3 : o.d === 1 ? 2 : 1, had = log.get(m.id);   // 0 theirs, 1 mine, 2 mine and delivered, 3 mine and opened
       if (had) {
@@ -871,6 +999,7 @@ header h1{font-size:20px;margin:0}
     box.appendChild(emptyEl);
     keep.forEach(function (m) { m.u = !known; log.set(m.id, m); });
     renderMany(Array.from(log.values()));
+    boxSoon();
     // soft = the generation comes from the saved copy itself: keep that copy, only add what was written meanwhile
     if (soft) { if (keep.length) save(false, recsFor(keep)); } else save(true);
   }
@@ -944,7 +1073,7 @@ header h1{font-size:20px;margin:0}
     while (pend.length) {
       var m = log.get(pend[0]);
       if (!m) { pend.shift(); continue; }
-      var it = { id: m.id, ts: m.ts, n: m.name, x: m.text, im: m.im, w: m.mine ? 1 : 0 }, len = enc.encode(JSON.stringify(it)).length;
+      var it = { id: m.id, ts: m.ts, n: m.name, x: m.text, im: m.im, lc: m.lc, w: m.mine ? 1 : 0 }, len = enc.encode(JSON.stringify(it)).length;
       if (items.length && (size + len > 6500 || items.length >= 100)) break;
       pend.shift(); items.push(it); size += len;
     }
@@ -954,7 +1083,7 @@ header h1{font-size:20px;margin:0}
     if (!Array.isArray(o.m)) return;
     var off = clockOff.get(o.s) || 0, fresh = [], mineName = me.name.trim().toLowerCase();
     o.m.slice(0, 100).forEach(function (e) {
-      var m = e && typeof e.ts === 'number' && !log.has(e.id) ? clean(e.id, Math.min(Date.now(), e.ts + off), e.n, e.x, e.im) : null;
+      var m = e && typeof e.ts === 'number' && !log.has(e.id) ? clean(e.id, Math.min(Date.now(), e.ts + off), e.n, e.x, e.im, e.lc) : null;
       if (!m) return;
       // "me" when the phone that passes it on did not write it, and it carries this person's name
       m.mine = !e.w && m.name.trim().toLowerCase() === mineName; m.state = 'seen';
@@ -1095,6 +1224,54 @@ header h1{font-size:20px;margin:0}
   }
   function endPick() { setTimeout(function () { picking = false; if (document.hidden) cover(); }, 800); }
 
+  /* ---------- location: asked for, and shared only with a tap ---------- */
+  function locBox(m) {
+    var b = el('div', 'msg-text msg-loc');
+    if (m.lc === 1) {
+      b.appendChild(el('span', '', m.mine ? 'You asked for their location. They choose if they share it.' : m.name + ' asks for your location.'));
+      if (!m.mine) { var s = el('button', 'loc-share', 'Share my location'); s.type = 'button'; b.appendChild(s); }
+      return b;
+    }
+    var la = m.lc[0].toFixed(5), lo = m.lc[1].toFixed(5), pos = la + ',' + lo, ua = navigator.userAgent, a = el('a', '', 'Open the map');
+    b.appendChild(el('span', '', m.mine ? 'Your location' : 'Location of ' + m.name));
+    b.appendChild(el('span', 'loc-pos', la + ', ' + lo + ' (within about ' + m.lc[2] + ' m)'));
+    if (/Android/i.test(ua)) a.href = 'geo:' + pos + '?q=' + pos;                    // the map app of the phone
+    else {
+      a.href = /iPhone|iPad|iPod|Macintosh/i.test(ua) ? 'https://maps.apple.com/?q=' + pos
+        : 'https://www.openstreetmap.org/?mlat=' + la + '&mlon=' + lo + '#map=16/' + la + '/' + lo;
+      a.target = '_blank'; a.rel = 'noopener noreferrer';
+    }
+    b.appendChild(a);
+    return b;
+  }
+  function locFail() { $('#loc-note').hidden = false; clearTimeout(locT); locT = setTimeout(function () { $('#loc-note').hidden = true; }, 8000); }
+  // The tap on "Share my location": read the place once and send it as one message.
+  function shareLoc(btn) {
+    if (btn.disabled) return;
+    if (!navigator.geolocation) { locFail(); return; }
+    btn.disabled = true; btn.textContent = 'Finding your location...';
+    picking = true; pickUntil = Date.now() + 60000;   // the browser asks "allow?" and takes the focus: that is not looking away
+    var done = function () { btn.disabled = false; btn.textContent = 'Share my location'; endPick(); };
+    try {
+      navigator.geolocation.getCurrentPosition(function (p) {
+        done();
+        var c = p && p.coords, lc = c ? okLoc([c.latitude, c.longitude, c.accuracy]) : null;
+        if (!lc) { locFail(); return; }
+        if (!joined || covering) return;
+        $('#loc-note').hidden = true;
+        say('Location: ' + lc[0].toFixed(5) + ', ' + lc[1].toFixed(5), lc);
+      }, function () { done(); locFail(); }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
+    } catch (e) { done(); locFail(); }
+  }
+  // Write one message of this person: on the screen, saved, and out.
+  function say(text, lc) {
+    lastTs = Math.max(Date.now(), lastTs + 1);
+    var m = { id: rid(14), ts: lastTs, name: me.name, text: text, mine: true, state: 'sending', lastSent: 0, u: !known };
+    if (lc) m.lc = lc;
+    add(m); render(m); refreshStatus(); wroteOne(m);
+    sendMsg(m);
+  }
+
   /* ---------- notifications on the phone ---------- */
   // A name in plain form: the same person, whatever capitals or spaces they typed.
   function norm(n) {
@@ -1126,7 +1303,7 @@ header h1{font-size:20px;margin:0}
   }
   function heard(l) { if (okWant(l) && mergeWant(l)) { saveNote(); refreshPanel(); tellSoon(1000); } }
   // Put the choices on the relays, so a phone that opens the room alone still learns them.
-  function tell() { if (joined && want.size) publish({ t: 'w', w: wantList() }, true); }
+  function tell() { if (joined && want.size) publish({ t: 'w', w: wantList() }, '/w'); }
   function tellSoon(ms) { if (!tellT) tellT = setTimeout(function () { tellT = 0; tell(); }, ms); }
   function noteRec() { return { k: 'n', g: gen, c: noteVer || Date.now(), w: wantList() }; }
   function okNote(o) { return typeof o.c === 'number' && isFinite(o.c) && o.c > 0 && okWant(o.w); }
@@ -1238,7 +1415,7 @@ header h1{font-size:20px;margin:0}
   // aside for the back button (persisted) is covered as before.
   window.addEventListener('pagehide', function (e) {
     if (!e.persisted) leaving = true;
-    flush(); if (joined) { lastKnocks(); publish({ t: 'b' }); }
+    flush(); if (joined) { lastKnocks(); bye(); }
   });
 
   function fit() {
@@ -1286,13 +1463,17 @@ header h1{font-size:20px;margin:0}
         $('#ping-code').value = c;
         if (/Android/i.test(navigator.userAgent)) { var a = $('#ping-open'); a.href = 'ntfy://ntfy.sh/' + c; a.hidden = false; }
       }).catch(function () {});
+      if (myName) crypto.subtle.sign('HMAC', pingKey, enc.encode('room-box-v1:' + myName)).then(function (sig) {
+        boxId = hex(sig).slice(0, 24); boxSoon(2000);     // where the relays keep this person's waiting messages
+      }).catch(function () {});
       openStore(); restore();
       job(start);                    // connect once the saved chat is loaded
       setTimeout(start, 9000);       // or after 9 seconds, if the storage is that slow
       setInterval(beat, BEAT);
       setInterval(function () {
         if (peerSeen && Date.now() - peerSeen > PEER_TTL) { peerSeen = 0; setPeer(false); }
-        prune(); refreshStatus(); wantPics();
+        prune(); refreshStatus(); wantPics(); lastLine();
+        if (Date.now() - boxAt > 60000) boxSoon();       // once a minute: the box says "still here"
         if (picking && Date.now() > pickUntil) { picking = false; if (document.hidden) cover(); }
         if (Date.now() - lastAct > IDLE) cover();        // nobody touched the page for 10 minutes
         sentAt.forEach(function (t, id) { if (t < Date.now() - 60000) sentAt.delete(id); });
@@ -1345,11 +1526,18 @@ header h1{font-size:20px;margin:0}
   });
 
   // Leave: hide the chat at once, tell the other person, then reload. The saved chat stays.
+  // Ask the other person where they are. They see a button, and choose.
+  $('#loc').addEventListener('click', function () {
+    var btn = $('#loc');
+    if (!joined || btn.disabled) return;
+    btn.disabled = true; setTimeout(function () { btn.disabled = false; }, 10000);
+    say('Asked for your location', 1);
+  });
   $('#leave').addEventListener('click', function () {
     covering = true;   // leaving on purpose: no cover now, and none after the reload
     $('#chat-screen').hidden = true; flush(); lastKnocks();
     var go = function () { location.reload(); };
-    publish({ t: 'b' }).then(go, go);
+    bye().then(go, go);
     setTimeout(go, 800);
   });
 
@@ -1360,9 +1548,7 @@ header h1{font-size:20px;margin:0}
     box.value = ''; lastTypingSent = 0; $('#composer').removeAttribute('data-has');
     var sb = $('#send'); sb.classList.remove('go'); void sb.offsetWidth; sb.classList.add('go');
     lastTs = Math.max(Date.now(), lastTs + 1);
-    var m = { id: rid(14), ts: lastTs, name: me.name, text: text, mine: true, state: 'sending', lastSent: 0, u: !known };
-    add(m); render(m); refreshStatus(); wroteOne(m);
-    sendMsg(m);
+    say(text);
     box.focus();
   });
   $('#send').addEventListener('mousedown', function (e) { e.preventDefault(); });
@@ -1377,6 +1563,8 @@ header h1{font-size:20px;margin:0}
   });
   // Tap a photo to see it large. Save puts it in the downloads of this phone.
   $('#messages').addEventListener('click', function (e) {
+    var sh = e.target.closest ? e.target.closest('.loc-share') : null;
+    if (sh) { shareLoc(sh); return; }
     var b = e.target.closest ? e.target.closest('.msg-pic[data-ready]') : null, m = b && b.closest('.msg'), p = m && pics.get(m.dataset.id);
     if (!p || !p.url) return;
     $('#viewer-img').src = p.url;

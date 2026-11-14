@@ -23,6 +23,9 @@ If the other person is in but you cannot see each other, one of the passwords is
 - **End-to-end encrypted.** Messages are encrypted in the browser before they leave the phone. The relays that carry them only see random-looking bytes.
 - **Saved on your device.** The chat is stored in the browser, locked with the password. It is still there when you come back and type the same password.
 - **Works offline.** Messages written without a connection go out when it is back.
+- **Messages wait.** You can write when the other person is not in the room. The message waits, encrypted, and arrives when they open the room, also when you have left by then. A photo arrives once you are both in the room.
+- **Last here, and active.** Under the name you see when the other person was last in the room. While they are in, you see how long ago they last touched the page. The page knows nothing about the rest of their phone.
+- **Ask for location.** Tap **Ask for location**. The other person gets a button **Share my location**. Only when they tap it does their phone read the place and send it, encrypted, with a link that opens a map. The page never sends a place by itself and does not follow anyone.
 - **Sent, Delivered, Opened.** Your last message shows how far it got: Sent (it left your phone), Delivered (the other phone has it) or Opened (it is on their screen).
 - **Chat lines, not bubbles.** Each message is a line with a coloured bar and the name of who wrote it, grouped under the day.
 - **Catches up.** If one phone missed messages, the two phones compare what they hold and send only what is missing.
@@ -41,9 +44,11 @@ Everything is in [`index.html`](index.html). There is no build step and no depen
 | Key | The password is stretched with PBKDF2-SHA-256 (250,000 rounds) into 96 bytes: an AES-256-GCM key, the name of the meeting place, the name of the saved chat, and a key for notification codes. |
 | Transport | Encrypted packets are published over MQTT on WebSocket to three public brokers (HiveMQ, EMQX, Mosquitto) at once, so the chat keeps working if one is down. |
 | Packets | 12 random bytes (nonce) + AES-GCM ciphertext, padded to 1024, 2048, 4096… bytes so the length of a message is hidden. |
-| Replay guard | A packet is dropped if it does not decrypt, if its nonce was seen before, or if its clock is more than 10 minutes off. The one kept packet with the notification choices has no clock check; an old one cannot undo a newer choice. |
+| Replay guard | A packet is dropped if it does not decrypt, if its nonce was seen before, or if its clock is more than 10 minutes off. The packets a relay keeps (the notification choices and the waiting messages) have no clock check; an old one cannot undo anything newer. |
 | Photos | Redrawn in the browser as a JPEG (1280 px at most), then sent encrypted in pieces of 9,000 bytes. A phone that misses pieces asks for them again. |
 | Storage | IndexedDB, one encrypted record per message and per photo. No key or password is ever stored. |
+| Waiting messages | Each person has one encrypted "box" that the relays keep: the messages nobody has received yet (30 at most, no photo bytes) and which messages that person holds. A page that opens the room alone reads the boxes. The time a box was sealed is the "last here" time. |
+| Location | A request and an answer are ordinary encrypted messages. The place (latitude, longitude, accuracy) is read once, after a tap, and saved with the chat like any message. |
 | Notifications | Only for people who turned them on. The writer's page sends [ntfy.sh](https://ntfy.sh) one small request: a code made from the password and the name, the fixed words "New message", and the address of the page. Never a name, never the text. The on/off choices travel encrypted; the relays keep one such packet so a phone learns them when it opens the room alone. |
 
 The comment at the top of the script in `index.html` describes the packet types, the delete mechanism and the sync protocol in full.
@@ -63,6 +68,9 @@ The comment at the top of the script in `index.html` describes the packet types,
 - **Made for two people.** Nothing stops a third person who knows the password from joining.
 - **Both phones need the right time.** Set the clock to automatic. A clock more than 10 minutes off makes the other phone ignore your messages.
 - **The relays are public test brokers.** They cannot read the chat, but they can see that someone is using the room, and they make no promise to stay up.
+- **Waiting messages rest on the public relays.** They are encrypted, but a relay may drop them after a while or after a restart. Then the message arrives the next time you are both in the room.
+- **"Last here" is about this page only.** It says when the other person had the room open, not when they used their phone.
+- **A shared location is a message.** It stays in the chat until someone uses Delete chat. Opening the map leaves the page, which signs you out. The map service then sees the place you open.
 - **Clearing browser data deletes the saved chat** on that device.
 - **Photos are for the new page only.** A phone that still has the old page open shows the word "Photo" until it is reloaded.
 - **A saved or screenshotted photo is out of the room.** Delete chat cannot reach a copy the other person has saved.
