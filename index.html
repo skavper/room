@@ -289,8 +289,9 @@ header h1{font-size:20px;margin:0}
     cover after 10 minutes without a touch.
   - Cover: when the page is hidden or the window loses focus while in a chat, the chat is swapped
     for a harmless-looking page (picked at random, with its own tab title and icon) and the page
-    reloads, which signs you out: the key only lives in memory. The cover stays, also over a reload,
-    until the name at its top left is tapped three times. Then the sign-in form is back.
+    reloads, which signs you out: the key only lives in memory. The cover stays over that one reload,
+    until the name at its top left is tapped three times or the page is refreshed by hand. Then the
+    sign-in form is back.
 */
 (function () {
   var $ = function (s) { return document.querySelector(s); };
@@ -343,7 +344,7 @@ header h1{font-size:20px;margin:0}
       list: ['"The petrichor drifted in through the open window."', 'First used in 1964 by two Australian scientists.', 'From the Greek petra (stone) and ichor (the fluid in the veins of the gods).', 'Yesterday: sonder. Tomorrow: a word for a very small amount.'],
       btn: 'See the archive' }
   ];
-  var COVER_KEY = 'room-cover', covering = false, taps = 0, tapT = 0;
+  var COVER_KEY = 'room-cover', covering = false, leaving = false, taps = 0, tapT = 0;
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
   function showCover(i) {
     var c = COVERS[i] || COVERS[0], box = $('#cover');
@@ -374,6 +375,9 @@ header h1{font-size:20px;margin:0}
   // Looked away while in a chat: put the cover up at once, tell the other person, then reload (that signs out).
   function cover() {
     if (!joined || covering || picking) return;   // the photo picker takes the focus: that is not looking away
+    // A refresh or a closed tab also counts as "hidden" for a moment. That is not looking away:
+    // the page is going anyway, and the next load must show the sign-in form, not the cover.
+    if (leaving) return;
     covering = true;
     var i = Math.floor(Math.random() * COVERS.length);
     showCover(i);
@@ -384,7 +388,12 @@ header h1{font-size:20px;margin:0}
     publish({ t: 'b' }).then(go, go);
     setTimeout(go, 800);
   }
-  try { var saved = sessionStorage.getItem(COVER_KEY); if (saved !== null) showCover(+saved); } catch (e) {}
+  // The page loaded itself again after looking away: show the cover, this one time only.
+  // The note is thrown away at once, so a refresh by hand brings the sign-in form back.
+  try {
+    var saved = sessionStorage.getItem(COVER_KEY);
+    if (saved !== null) { sessionStorage.removeItem(COVER_KEY); showCover(+saved); }
+  } catch (e) {}
 
   function rid(n) { var a = crypto.getRandomValues(new Uint8Array(n)); return Array.prototype.map.call(a, function (b) { return (b % 36).toString(36); }).join(''); }
   function hex(buf) { return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
@@ -1232,9 +1241,14 @@ header h1{font-size:20px;margin:0}
   window.addEventListener('focus', function () { if (picking) endPick(); });
   ['pointerdown', 'keydown'].forEach(function (ev) { document.addEventListener(ev, function () { lastAct = Date.now(); }, true); });
   window.addEventListener('online', wake);
-  window.addEventListener('pageshow', wake);
+  window.addEventListener('pageshow', function () { leaving = false; wake(); });   // the page stayed after all: the cover works again
   window.addEventListener('offline', refreshStatus);
-  window.addEventListener('pagehide', function () { flush(); if (joined) { lastKnocks(); publish({ t: 'b' }); } });
+  // The page is being left (refresh, closed tab, another address). A page the browser only keeps
+  // aside for the back button (persisted) is covered as before.
+  window.addEventListener('pagehide', function (e) {
+    if (!e.persisted) leaving = true;
+    flush(); if (joined) { lastKnocks(); publish({ t: 'b' }); }
+  });
 
   function fit() {
     var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -1344,6 +1358,7 @@ header h1{font-size:20px;margin:0}
 
   // Leave: hide the chat at once, tell the other person, then reload. The saved chat stays.
   $('#leave').addEventListener('click', function () {
+    covering = true;   // leaving on purpose: no cover now, and none after the reload
     $('#chat-screen').hidden = true; flush(); lastKnocks();
     var go = function () { location.reload(); };
     publish({ t: 'b' }).then(go, go);

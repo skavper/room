@@ -16,7 +16,7 @@ If the other person is in but you cannot see each other, one of the passwords is
 
 ### Getting back in after the page hides
 
-Tap the site name at the top left of the cover page **three times**, quickly. The sign-in form comes back. Type your name and the password again; the saved chat is still there.
+**Refresh the page.** The sign-in form comes back. You can also tap the site name at the top left of the cover page **three times**, quickly. Type your name and the password again; the saved chat is still there.
 
 ## What it does
 
@@ -67,7 +67,7 @@ The comment at the top of the script in `index.html` describes the packet types,
 - **Photos are for the new page only.** A phone that still has the old page open shows the word "Photo" until it is reloaded.
 - **A saved or screenshotted photo is out of the room.** Delete chat cannot reach a copy the other person has saved.
 - **Notifications use an outside service.** ntfy.sh cannot read the chat, but it can see that a message was written, and when. The notification code belongs to your name, so type the same name every time. Opening the ntfy app takes you away from the page, which signs you out: turn notifications on first.
-- **The cover is a disguise, not a lock.** The address bar still shows this site, and anyone who knows the three taps gets the sign-in form. The password still protects the chat.
+- **The cover is a disguise, not a lock.** The address bar still shows this site, and anyone who refreshes the page or knows the three taps gets the sign-in form. The password still protects the chat.
 
 ## Run it yourself
 
