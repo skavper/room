@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="robots" content="noindex">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; connect-src wss://broker.hivemq.com:8884 wss://broker.emqx.io:8084 wss://test.mosquitto.org:8081; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; connect-src wss://broker.hivemq.com:8884 wss://broker.emqx.io:8084 wss://test.mosquitto.org:8081 https://ntfy.sh; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="color-scheme" content="light dark">
 <title>Room</title>
 <link id="icon" rel="icon" href="data:,">
@@ -84,10 +84,21 @@ header h1{font-size:20px;margin:0}
 @keyframes shimmer{from{background-position:100% 0}to{background-position:-100% 0}}
 @keyframes launch{40%{transform:translateY(-9px);opacity:0}41%{transform:translateY(9px);opacity:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
-#tools{display:flex;justify-content:flex-end;padding:6px 10px 0}
+#tools{display:flex;justify-content:flex-end;gap:4px;padding:6px 10px 0}
 #tools button{padding:4px 10px;font-size:13px;color:var(--soft);border-color:transparent}
 #clear-ask p{margin:0 0 8px}
 #clear-ask button{margin-right:8px;padding:8px 14px}
+#bell-panel{animation:drop .25s;flex:none;max-height:62%;overflow-y:auto;padding:12px 16px 14px;background:var(--card);border-bottom:1px solid var(--line);font-size:15px}
+#bell-panel h2{margin:0;font-size:17px}
+#bell-panel p,#bell-panel ol,#bell-panel ul{margin:8px 0}
+#bell-panel ol,#bell-panel ul{padding-left:22px}
+#bell-panel li{margin:8px 0}
+#bell-panel button{padding:8px 14px}
+#bell-panel li button{display:block;margin-top:6px}
+#bell-panel a{color:var(--me)}
+.bell-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#ping-code{margin-top:6px;font-family:ui-monospace,Consolas,monospace;font-size:14px}
+#ping-open{display:block;margin-top:6px}
 #empty{margin:auto;color:var(--soft);text-align:center;padding:0 12px}
 #empty small{display:block;margin-top:10px;font-size:14px}
 #here{flex:none;display:flex;align-items:center;gap:8px;height:0;padding:0 16px;overflow:hidden;transition:height .28s cubic-bezier(.2,.8,.2,1)}
@@ -157,10 +168,36 @@ header h1{font-size:20px;margin:0}
   <div id="clock-note" class="note" hidden>The time on one phone looks wrong. Set the time to automatic on both phones.</div>
   <div id="save-note" class="note" hidden>Your chat cannot be saved on this phone. You can still chat.</div>
   <div id="pic-note" class="note" hidden>That photo could not be sent. Try another one.</div>
-  <div id="tools"><button id="clear" type="button" class="quiet">Delete chat</button></div>
+  <div id="tools"><button id="bell" type="button" class="quiet" aria-expanded="false">Notifications</button><button id="clear" type="button" class="quiet">Delete chat</button></div>
   <div id="clear-ask" class="note" hidden>
     <p>Delete this chat for both of you? It cannot be undone.</p>
     <button id="clear-yes" type="button">Yes, delete it</button><button id="clear-no" type="button" class="quiet">No, keep it</button>
+  </div>
+  <div id="bell-panel" hidden>
+    <div class="bell-top"><h2>Notifications</h2><button id="bell-close" type="button" class="quiet">Close</button></div>
+    <p>Your phone tells you when a message comes. It also works when this page is closed. You need the free app "ntfy".</p>
+    <p>When you leave this page, it signs you out. That is normal. So do the steps in this order.</p>
+    <ol>
+      <li>Tap "Turn on".
+        <button id="ping-toggle" type="button">Turn on</button>
+        <p id="ping-note" class="hint">It is off.</p></li>
+      <li>Copy your code.
+        <input id="ping-code" type="text" readonly aria-label="Your code">
+        <button id="ping-copy" type="button" class="quiet">Copy the code</button></li>
+      <li>Get the app "ntfy" on your phone. <a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy" target="_blank" rel="noopener noreferrer">ntfy for Android</a>. <a href="https://apps.apple.com/us/app/ntfy/id1625396347" target="_blank" rel="noopener noreferrer">ntfy for iPhone</a>.</li>
+      <li>Open the app. Tap the plus sign (+). Paste the code where it says "Topic name". Tap Subscribe.
+        <a id="ping-open" hidden>Or tap here. The app opens with the code.</a></li>
+      <li>Come back to this page. Go in again. Then tap "Send a test". Your phone shows a notification.
+        <button id="ping-test" type="button" class="quiet">Send a test</button>
+        <p id="ping-test-note" class="hint" hidden></p></li>
+    </ol>
+    <ul class="hint">
+      <li>The notification says "Room: New message". It does not show the message, or who wrote it. Open the room to read it.</li>
+      <li>The message itself comes when you are both in the room.</li>
+      <li>You can turn it off at any time. Tap "Turn off". Then nothing is sent to your phone.</li>
+      <li>The code belongs to your name. Type the same name every time.</li>
+      <li>This uses the free service ntfy.sh. It can see that a message was sent, and when. It can never see what the message says.</li>
+    </ul>
   </div>
   <div id="messages" aria-live="polite"><p id="empty">No messages yet. Say hello!<small>Is the other person here, but you cannot see them? Then one password is different. Tap Leave and type it again.</small></p></div>
   <div id="here" data-on="false">
@@ -183,9 +220,10 @@ header h1{font-size:20px;margin:0}
 /*
   How it works. Everything is in this one file.
 
-  - The password is stretched with PBKDF2-SHA-256 (250,000 rounds) into 64 bytes.
+  - The password is stretched with PBKDF2-SHA-256 (250,000 rounds) into 96 bytes.
     Bytes 0-31 are the AES-256-GCM key. Bytes 32-47 name the meeting place (the topic).
-    Bytes 48-63 name the saved chat on this phone. None of these reveals the key or the password.
+    Bytes 48-63 name the saved chat on this phone. Bytes 64-95 are a key for notification codes.
+    None of these reveals the key or the password.
   - Every packet on the wire is: 12 random bytes (nonce) + AES-GCM(JSON, padded with spaces
     to 1024, 2048, 4096... bytes, 16384 at most). The relays only see this. Padding hides how long
     a message is.
@@ -196,14 +234,15 @@ header h1{font-size:20px;margin:0}
       i  photo     {g, id, k, d}   piece k of the photo of message id (9000 bytes, base64)
       q  ask       {g, id, k: [pieces]}   "send me these pieces of that photo"
       a  got it    {i: [ids], o}
-      p  here      {n: name, h: [recent ids], g, c}   every 8 s; the author re-sends what is missing
+      p  here      {n: name, h: [recent ids], g, c, w}   every 8 s; the author re-sends what is missing
       k  my list   {g, l: [[bucket, after id, up to id, [ids]]]}
       M  bundle    {g, m: [{id, ts, n, x, w}]}   w = 1: the phone that passes it on wrote it
       y  typing
       b  leaving
+      w  choices   {w}   for notifications; the one packet that a relay keeps (see Notifications)
   - A packet is dropped when it does not decrypt (wrong password or changed), when its nonce was
     seen before (a replay, or the same packet from a second relay), or when its clock is more than
-    10 minutes away from ours (an old recording).
+    10 minutes away from ours (an old recording). Only the kept packet 'w' may be older.
   - Every message passes one gate (clean) before it is used: from a packet, from a bundle and from
     the saved copy. Text is only ever shown with textContent.
   - Saved chat: IndexedDB, one encrypted record per message plus small encrypted state records. Record
@@ -226,8 +265,28 @@ header h1{font-size:20px;margin:0}
     synced like any message, and an old page shows the word "Photo". The bytes travel in 'i' packets.
     A phone that misses pieces asks for them with 'q'. A photo is saved as one more encrypted record.
     A received photo is only ever shown as an image/jpeg blob in an <img>.
-  - Safety: a content security policy (no outside scripts, only the three relays), no framing,
-    a second tap before a short password is used, and the cover after 10 minutes without a touch.
+  - Notifications on the phone: through the free service ntfy.sh, only for people who turned it on.
+    Every name has a code: HMAC-SHA-256 with the key from bytes 64-95 over the name in plain form
+    (trimmed, lower case). The key stays in memory. The code cannot be linked to the topic or to the
+    saved chat. The beat carries the choices (w: a list of [name, 1 on or 0 off, when it was chosen];
+    the newer choice of a name wins, so every phone ends up with the same list). Each phone keeps
+    the choices in one encrypted record (kind 'n'; the newest wins).
+    The choices also rest on the relays, so a phone learns them when it opens the room, also when
+    the other person is not there: packet 'w', sealed and padded like every packet, sent with the
+    MQTT "retain" flag to a second topic (the topic + "/w"; older pages never ask for it). A relay
+    keeps the last one and hands it to every page that connects. It is the only thing a relay keeps,
+    and only once somebody used the switch. An old copy does no harm: the newer choice of a name wins.
+    After it connects, the page waits 2 seconds before it sends a request, so the choices are in first.
+    When a message is written, the page sends ntfy.sh one small request for each person who turned
+    it on and is not in the room (a page in the room is in view: looking away signs out), and for
+    all of them when nobody got the message within 5 seconds, or when this page signs out before
+    that. The request holds the code, fixed words ("New message") and the address of this page, so
+    a tap opens it: never a name, never the text. At most one per person in two minutes, unless
+    that person came into the room in between. That limit lives in memory: signing out forgets it.
+    Nothing goes to ntfy.sh as long as nobody in the room turned it on or asked for a test.
+  - Safety: a content security policy (no outside scripts; only the three relays and, for
+    notifications, ntfy.sh), no framing, a second tap before a short password is used, and the
+    cover after 10 minutes without a touch.
   - Cover: when the page is hidden or the window loses focus while in a chat, the chat is swapped
     for a harmless-looking page (picked at random, with its own tab title and icon) and the page
     reloads, which signs you out: the key only lives in memory. The cover stays, also over a reload,
@@ -238,6 +297,7 @@ header h1{font-size:20px;margin:0}
   var RELAYS = ['wss://broker.hivemq.com:8884/mqtt', 'wss://broker.emqx.io:8084/mqtt', 'wss://test.mosquitto.org:8081/mqtt'];
   var SALT = 'room-chat-v1-salt', ROUNDS = 250000, PAD = 1024, KEEP = 40, BEAT = 8000, PEER_TTL = 24000, TYPING_TTL = 6000, SKEW = 600000;
   var CHUNK = 9000, PIC_AIM = 200000, PIC_MAX = 600000, IDLE = 600000;
+  var NTFY = 'https://ntfy.sh/', PING_GAP = 120000;
   var enc = new TextEncoder(), dec = new TextDecoder();
   if (window.top !== window.self) { document.body.textContent = ''; return; }   // never run inside another page
 
@@ -257,6 +317,13 @@ header h1{font-size:20px;margin:0}
   var pics = new Map();     // message id -> {parts, got, bytes, url, t: last piece, q: last ask}
   var picking = false, pickUntil = 0, lastAct = Date.now(), weakOk = false, picNoteT = 0;
   var emptyEl = $('#empty');
+  var pingKey = null, myName = '';   // myName = this person's name in plain form (see norm)
+  var want = new Map();     // plain name -> {v: 1 (tell my phone) or 0 (do not), c: when it was chosen}
+  var codes = new Map();    // plain name -> notification code (a promise)
+  var here = new Map();     // sender id -> {n: plain name, t: last heard}
+  var told = new Map(), failedAt = new Map(), busy = new Set();   // per name: last knock, last failed try, one on its way
+  var wrote = [];           // messages written here that may still need a knock: {m, t, due: [names], late}
+  var noteVer = 0, readyAt = 0, tellT = 0;   // readyAt: when the first relay connected; tellT: the choices go to the relays soon
 
   /* ---------- cover: what the page turns into when you look away ---------- */
   var COVERS = [
@@ -311,7 +378,7 @@ header h1{font-size:20px;margin:0}
     var i = Math.floor(Math.random() * COVERS.length);
     showCover(i);
     $('#messages').textContent = '';
-    flush();
+    flush(); lastKnocks();
     try { sessionStorage.setItem(COVER_KEY, String(i)); } catch (e) {}
     var go = function () { location.reload(); };
     publish({ t: 'b' }).then(go, go);
@@ -325,12 +392,13 @@ header h1{font-size:20px;margin:0}
   /* ---------- crypto ---------- */
   function derive(pw) {
     return crypto.subtle.importKey('raw', enc.encode(pw.normalize('NFKC')), 'PBKDF2', false, ['deriveBits']).then(function (base) {
-      return crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(SALT), iterations: ROUNDS }, base, 512);
+      return crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(SALT), iterations: ROUNDS }, base, 768);
     }).then(function (bits) {
       topic = 'room/' + hex(bits.slice(32, 48));
       slot = hex(bits.slice(48, 64));
-      return crypto.subtle.importKey('raw', bits.slice(0, 32), 'AES-GCM', false, ['encrypt', 'decrypt']);
-    }).then(function (k) { key = k; });
+      return Promise.all([crypto.subtle.importKey('raw', bits.slice(0, 32), 'AES-GCM', false, ['encrypt', 'decrypt']),
+        crypto.subtle.importKey('raw', bits.slice(64, 96), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])]);
+    }).then(function (k) { key = k[0]; pingKey = k[1]; });
   }
   function seal(obj) {
     obj.v = 1; obj.s = me.sid; obj.at = Date.now();
@@ -413,7 +481,8 @@ header h1{font-size:20px;margin:0}
     var r = this, type = first >> 4;
     if (type === 2) {
       if (p[1] !== 0) { r.drop(); return; }
-      r.ws.send(packet(0x82, [new Uint8Array([0, 1]), str(topic), new Uint8Array([0])]));
+      // two topics in one request: the room, and the kept packet with the choices for notifications
+      r.ws.send(packet(0x82, [new Uint8Array([0, 1]), str(topic), new Uint8Array([0]), str(topic + '/w'), new Uint8Array([0])]));
     } else if (type === 9) {
       if (p[2] === 0x80) { r.drop(); return; }
       r.ready = true; r.tries = 0; everReady = true; clearTimeout(r.cto);
@@ -442,9 +511,10 @@ header h1{font-size:20px;margin:0}
   function readyCount() { return relays.filter(function (r) { return r.ready; }).length; }
 
   // Publish one encrypted packet to every connected relay. Resolves to how many got it.
-  function publish(obj) {
+  // keep: the relay keeps this packet (MQTT "retain") on the second topic. Only the choices 'w' use it.
+  function publish(obj, keep) {
     return seal(obj).then(function (payload) {
-      var frame = packet(0x30, [str(topic), payload]), n = 0;
+      var frame = packet(keep ? 0x31 : 0x30, [str(keep ? topic + '/w' : topic), payload]), n = 0;
       relays.forEach(function (r) { if (r.ready && r.ws && r.ws.readyState === 1) { try { r.ws.send(frame); n++; } catch (e) { r.drop(true); } } });
       return n;
     });
@@ -484,7 +554,7 @@ header h1{font-size:20px;margin:0}
     if (!m.mine) return '';
     if (m.state === 'opened') return ' · Opened';
     if (m.state === 'seen') return ' · Delivered';
-    if (m.state === 'sent') return ' · Sent';
+    if (m.state === 'sent') return m.told ? ' · Sent · Notified' : ' · Sent';
     return readyCount() ? ' · Sending...' : ' · Waiting for connection';
   }
   function updateStates() {
@@ -575,13 +645,20 @@ header h1{font-size:20px;margin:0}
   }
   function beat() {
     if (!joined || !readyCount()) return;
-    publish({ t: 'p', n: me.name, h: recent().map(function (m) { return m.id; }), g: gen, c: summary() });
+    var o = { t: 'p', n: me.name, h: recent().map(function (m) { return m.id; }), g: gen, c: summary() };
+    if (want.size) o.w = wantList();     // the choices for notifications on the phone, as far as we know them
+    publish(o);
   }
   function kick() { var now = Date.now(); if (now - lastKick > 3000) { lastKick = now; beat(); } }
-  function onReady() { beat(); resendUnseen(null); }
+  function onReady() {
+    if (readyCount() === 1) readyAt = Date.now();     // the first relay is there
+    beat(); resendUnseen(null); knocks(); tellSoon(2500);
+  }
 
   function onPacket(o) {
     if (o.s === me.sid) return;
+    // The choices that a relay kept. They may be old, and say nothing about who is here now.
+    if (o.t === 'w') { heard(o.w); return; }
     var gap = Date.now() - o.at;
     if (Math.abs(gap) > SKEW) { if (!peerSeen) $('#clock-note').hidden = false; return; }   // old recording, or a wrong clock
     // No generation, and sealed before the last delete: an old recording, played again.
@@ -590,6 +667,17 @@ header h1{font-size:20px;margin:0}
     var fresh = !clockOff.has(o.s);
     if (fresh) clockOff.set(o.s, gap);
     if (o.t !== 'b') { peerSeen = Date.now(); if (typeof o.n === 'string') peerName = o.n.slice(0, 30); setPeer(true); }
+    // Who is in the room, by name. A page in the room is in view: looking away signs out.
+    if (o.t === 'b') here.delete(o.s);
+    else {
+      var h = here.get(o.s);
+      if (typeof o.n === 'string') {
+        if (!h) { h = { n: '', t: 0 }; here.set(o.s, h); }
+        h.n = norm(o.n);
+        told.delete(h.n);                 // they are in the room: the next knock is a new one
+      }
+      if (h) h.t = Date.now();
+    }
     if (okGen(o.g)) {
       if (o.g > gen) applyGen(o.g, true);
       else if (o.g < gen) { if (o.t === 'p') kick(); return; }   // from a phone that has not heard about the delete
@@ -609,7 +697,8 @@ header h1{font-size:20px;margin:0}
       (Array.isArray(o.i) ? o.i : []).forEach(function (id) { var m = log.get(id); if (m) (o.o === 1 ? opened : delivered)(m); });
       updateStates();
     } else if (o.t === 'p') {
-      onBeat(o);                                         // first: when the chats match, everything is delivered
+      if (o.w !== undefined) heard(o.w);
+      onBeat(o);                                       // first: when the chats match, everything is delivered
       resendUnseen(Array.isArray(o.h) ? o.h : []);
     } else if (o.t === 'k') {
       onList(o);
@@ -691,7 +780,7 @@ header h1{font-size:20px;margin:0}
     var ep = epoch;
     job(function () {
       if (!db || (!wipe && ep !== epoch)) return;       // a delete came in between: these are old
-      if (wipe) recs = [{ k: 's', g: gen, y: known ? 1 : 0 }].concat(recsFor(Array.from(log.values())));
+      if (wipe) recs = [{ k: 's', g: gen, y: known ? 1 : 0 }].concat(want.size ? [noteRec()] : [], recsFor(Array.from(log.values())));
       return Promise.all(recs.map(function (r) {
         var k = hex(crypto.getRandomValues(new Uint8Array(12)));
         return lock(r, k).then(function (v) { return { k: k, v: v }; });
@@ -736,9 +825,14 @@ header h1{font-size:20px;margin:0}
     // The saved copy is at a higher generation: move there, but do not wipe. What was saved is the chat.
     if (top > gen) applyGen(top, learned, true); else if (top === gen && learned) known = true;
     var old = [], fresh = [], from = new Map();                 // from: message id -> the record it was read from
+    var note = null, noteKey = '';
     objs.forEach(function (o, i) {
       if (!o || !okGen(o.g)) return;
       if (o.g < gen) { old.push(rows[i].k); return; }          // from before a delete
+      if (o.k === 'n') {                                         // notification choices: the newest record wins
+        if (okNote(o) && (!note || o.c > note.c)) { if (note) old.push(noteKey); note = o; noteKey = rows[i].k; } else old.push(rows[i].k);
+        return;
+      }
       if (o.k === 'i' && o.g === gen) {                         // a saved photo
         if (typeof o.id === 'string' && typeof o.d === 'string' && o.d.length < 1e6) { try { setPic(o.id, unb64(o.d), true); } catch (e) {} }
         return;
@@ -759,6 +853,7 @@ header h1{font-size:20px;margin:0}
       from.set(m.id, rows[i].k); log.set(m.id, m); fresh.push(m);
     });
     renderMany(fresh);
+    if (note) adoptNote(note);
     if (old.length) job(function () { return tx(function (st) { old.forEach(function (k) { st.delete(k); }); }); });
   }
 
@@ -987,7 +1082,7 @@ header h1{font-size:20px;margin:0}
       var m = { id: rid(14), ts: lastTs, name: me.name, text: 'Photo', im: { n: Math.ceil(r.bytes.length / CHUNK), z: r.bytes.length, w: r.w, h: r.h },
         mine: true, state: 'sending', lastSent: 0, u: !known };
       setPic(m.id, r.bytes);
-      add(m); render(m); refreshStatus();
+      add(m); render(m); refreshStatus(); wroteOne(m);
       sendMsg(m).then(function () {
         if (!peerSeen) return;                             // nobody there: they ask for it when they come
         var all = []; for (var k = 0; k < m.im.n; k++) all.push(k);
@@ -999,6 +1094,129 @@ header h1{font-size:20px;margin:0}
     });
   }
   function endPick() { setTimeout(function () { picking = false; if (document.hidden) cover(); }, 800); }
+
+  /* ---------- notifications on the phone ---------- */
+  // A name in plain form: the same person, whatever capitals or spaces they typed.
+  function norm(n) {
+    if (typeof n !== 'string') return '';
+    try { n = n.normalize('NFKC'); } catch (e) {}
+    return n.trim().toLowerCase().slice(0, 30).trim();
+  }
+  // A list of choices from a packet or the saved record: at most 8 of [plain name, 1 or 0, when].
+  function okWant(l) {
+    return Array.isArray(l) && l.length <= 8 && l.every(function (e) {
+      return Array.isArray(e) && e.length === 3 && typeof e[0] === 'string' && !!e[0] && e[0].length <= 30 && norm(e[0]) === e[0] &&
+        (e[1] === 0 || e[1] === 1) && typeof e[2] === 'number' && e[2] > 0 && e[2] < 1e13 && e[2] % 1 === 0;
+    });
+  }
+  function wantList() { var l = []; want.forEach(function (w, n) { l.push([n, w.v, w.c]); }); return l; }
+  function wantTag() { return JSON.stringify(wantList().sort(function (a, b) { return a[0] < b[0] ? -1 : 1; })); }
+  // Take in a list. The newer choice of a name wins; at the same moment "on" wins. True when something changed.
+  function mergeWant(l) {
+    var was = wantTag();
+    l.forEach(function (e) {
+      var cur = want.get(e[0]);
+      if (!cur || e[2] > cur.c || (e[2] === cur.c && e[1] > cur.v)) want.set(e[0], { v: e[1], c: e[2] });
+    });
+    if (want.size > 8) {                  // keep the 8 newest
+      var all = wantList().sort(function (a, b) { return b[2] - a[2] || (a[0] < b[0] ? -1 : 1); }).slice(0, 8);
+      want = new Map(); all.forEach(function (e) { want.set(e[0], { v: e[1], c: e[2] }); });
+    }
+    return wantTag() !== was;
+  }
+  function heard(l) { if (okWant(l) && mergeWant(l)) { saveNote(); refreshPanel(); tellSoon(1000); } }
+  // Put the choices on the relays, so a phone that opens the room alone still learns them.
+  function tell() { if (joined && want.size) publish({ t: 'w', w: wantList() }, true); }
+  function tellSoon(ms) { if (!tellT) tellT = setTimeout(function () { tellT = 0; tell(); }, ms); }
+  function noteRec() { return { k: 'n', g: gen, c: noteVer || Date.now(), w: wantList() }; }
+  function okNote(o) { return typeof o.c === 'number' && isFinite(o.c) && o.c > 0 && okWant(o.w); }
+  function saveNote() { noteVer = Math.max(noteVer + 1, Date.now()); persist(noteRec()); }
+  // The saved choices are in. A choice made before they were read stays (see mergeWant).
+  function adoptNote(note) {
+    var newer = noteVer > note.c;
+    if (!newer) noteVer = note.c;
+    if (mergeWant(note.w) && newer) saveNote();
+    refreshPanel();
+  }
+  function codeFor(nm) {
+    if (!codes.has(nm)) codes.set(nm, crypto.subtle.sign('HMAC', pingKey, enc.encode('room-ping-v1:' + nm)).then(function (sig) { return 'room-' + hex(sig).slice(0, 24); }));
+    return codes.get(nm);
+  }
+  // Is this person in the room right now? Then they see the message: no knock.
+  function front(nm) {
+    var now = Date.now(), yes = false;
+    here.forEach(function (h) { if (h.n === nm && now - h.t < PEER_TTL) yes = true; });
+    return yes;
+  }
+  // One small request to ntfy.sh: the code, fixed words, and the address of this page. Never a name, never the text.
+  // keepalive: the request still goes out when the page signs out right after it.
+  function post(code, words) {
+    var body = { topic: code, title: 'Room', message: words };
+    if (location.protocol === 'https:') body.click = location.origin + location.pathname;
+    var opt = { method: 'POST', body: JSON.stringify(body), mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer', keepalive: true };
+    // A request that hangs is given up after 10 seconds, so a later knock can be tried again.
+    var ac = typeof AbortController === 'function' ? new AbortController() : null;
+    if (ac) opt.signal = ac.signal;
+    var t = setTimeout(function () { if (ac) ac.abort(); }, 10000);
+    return fetch(NTFY, opt).then(function (r) { clearTimeout(t); return r.ok; }, function (e) { clearTimeout(t); throw e; });
+  }
+  // Knock on one phone. True when that person has had a knock in the last two minutes.
+  function knock(nm) {
+    var now = Date.now();
+    if (now - (told.get(nm) || 0) < PING_GAP) return true;
+    if (busy.has(nm) || now - (failedAt.get(nm) || 0) < 20000) return false;
+    busy.add(nm);
+    codeFor(nm).then(function (code) { return post(code, 'New message'); }).then(function (ok) {
+      busy.delete(nm);
+      if (ok) { told.set(nm, Date.now()); knocks(); } else failedAt.set(nm, Date.now());
+    }).catch(function () { busy.delete(nm); failedAt.set(nm, Date.now()); });
+    return false;
+  }
+  // A message was written here. Who gets a knock: now, everybody who turned it on and is not in the room.
+  function wroteOne(m) {
+    var due = [];
+    want.forEach(function (w, nm) { if (w.v === 1 && nm !== myName && !front(nm)) due.push(nm); });
+    wrote.push({ m: m, t: Date.now(), due: due, late: false });
+    knocks();
+  }
+  function lateFor(e) {
+    e.late = true;
+    if (e.m.state !== 'seen' && e.m.state !== 'opened')    // nobody got it: knock on everybody who turned it on
+      want.forEach(function (w, nm) { if (w.v === 1 && nm !== myName && e.due.indexOf(nm) < 0) e.due.push(nm); });
+  }
+  function knocks() {
+    var now = Date.now(), changed = false;
+    // Wait until the choices that the relays keep are in: 2 seconds after the first relay connected.
+    if (readyCount() ? now - readyAt < 2000 : !everReady && now - startedAt < 15000) return;
+    wrote = wrote.filter(function (e) {
+      if (!log.has(e.m.id) || now - e.t > 60000) return false;
+      if (!e.late && now - e.t >= 5000) lateFor(e);
+      e.due = e.due.filter(function (nm) {
+        var w = want.get(nm);
+        if (!w || w.v !== 1) return false;                 // turned off in the meantime
+        // Came into the room in the meantime, and the message arrived: they see it, no knock.
+        if (front(nm) && (e.m.state === 'seen' || e.m.state === 'opened')) return false;
+        if (!knock(nm)) return true;                     // on its way, or it failed: try again
+        if (!e.m.told) { e.m.told = true; changed = true; }
+        return false;
+      });
+      return e.due.length > 0 || !e.late;
+    });
+    if (changed) updateStates();
+  }
+  // This page signs out now (cover, Leave, closed). What nobody got yet has its knock now, not after 5 seconds.
+  function lastKnocks() {
+    wrote.forEach(function (e) { if (!e.late) lateFor(e); });
+    knocks();
+  }
+  function refreshPanel() {
+    var w = want.get(myName), on = !!w && w.v === 1;
+    $('#bell').textContent = on ? 'Notifications: on' : 'Notifications';
+    $('#ping-toggle').textContent = on ? 'Turn off' : 'Turn on';
+    $('#ping-note').textContent = on ? 'It is on.' : 'It is off.';
+    // Work out the codes ahead of time, so a knock can still leave while the page signs out.
+    if (pingKey) want.forEach(function (c, nm) { if (c.v === 1) codeFor(nm).catch(function () { codes.delete(nm); }); });
+  }
 
   /* ---------- wiring ---------- */
   // Connect to the relays. This waits until the saved chat is loaded, so no packet can run ahead of it.
@@ -1016,7 +1234,7 @@ header h1{font-size:20px;margin:0}
   window.addEventListener('online', wake);
   window.addEventListener('pageshow', wake);
   window.addEventListener('offline', refreshStatus);
-  window.addEventListener('pagehide', function () { flush(); if (joined) publish({ t: 'b' }); });
+  window.addEventListener('pagehide', function () { flush(); if (joined) { lastKnocks(); publish({ t: 'b' }); } });
 
   function fit() {
     var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -1054,13 +1272,18 @@ header h1{font-size:20px;margin:0}
       weakOk = true; fail('This password is short, so it is easy to guess. Tap Go in again to use it anyway.'); return;
     }
     $('#join').disabled = true;
-    me.name = name.slice(0, 30);
+    me.name = name.slice(0, 30); myName = norm(me.name);
     derive(pw).then(function () {
       $('#password').value = ''; $('#password').type = 'password';
       joined = true; startedAt = lastAct = Date.now();
       $('#join-screen').hidden = true; $('#chat-screen').hidden = false;
       fit(); $('#text').focus();
       if (document.hidden) { cover(); return; }   // looked away while the password was being checked
+      refreshPanel();
+      if (myName) codeFor(myName).then(function (c) {      // this person's code, for the app "ntfy"
+        $('#ping-code').value = c;
+        if (/Android/i.test(navigator.userAgent)) { var a = $('#ping-open'); a.href = 'ntfy://ntfy.sh/' + c; a.hidden = false; }
+      }).catch(function () {});
       openStore(); restore();
       job(start);                    // connect once the saved chat is loaded
       setTimeout(start, 9000);       // or after 9 seconds, if the storage is that slow
@@ -1071,6 +1294,8 @@ header h1{font-size:20px;margin:0}
         if (picking && Date.now() > pickUntil) { picking = false; if (document.hidden) cover(); }
         if (Date.now() - lastAct > IDLE) cover();        // nobody touched the page for 10 minutes
         sentAt.forEach(function (t, id) { if (t < Date.now() - 60000) sentAt.delete(id); });
+        here.forEach(function (h, s) { if (Date.now() - h.t > PEER_TTL) here.delete(s); });
+        knocks();
       }, 2000);
     }).catch(function () {
       $('#join').disabled = false; fail('Something went wrong. Please try again.');
@@ -1087,9 +1312,39 @@ header h1{font-size:20px;margin:0}
     beat(); setTimeout(beat, 2000);
   });
 
+  // Notifications: the panel, the code, the switch and the test.
+  $('#bell').addEventListener('click', function () {
+    var p = $('#bell-panel'); p.hidden = !p.hidden;
+    $('#bell').setAttribute('aria-expanded', p.hidden ? 'false' : 'true');
+  });
+  $('#bell-close').addEventListener('click', function () { $('#bell-panel').hidden = true; $('#bell').setAttribute('aria-expanded', 'false'); });
+  $('#ping-copy').addEventListener('click', function () {
+    var box = $('#ping-code'), btn = $('#ping-copy');
+    if (!box.value) return;
+    var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy the code'; }, 2000); };
+    var old = function () { try { box.focus(); box.select(); if (document.execCommand('copy')) done(); } catch (e) {} };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(box.value).then(done, old); else old();
+  });
+  // The switch. The choice goes to the other phone (beat), to the relays (kept packet) and into the saved chat.
+  $('#ping-toggle').addEventListener('click', function () {
+    if (!myName) return;
+    var cur = want.get(myName);
+    want.set(myName, { v: cur && cur.v === 1 ? 0 : 1, c: Math.min(1e13 - 1, Math.max((cur ? cur.c : 0) + 1, Math.floor(Date.now() / 1000))) });
+    mergeWant([]); saveNote(); beat(); tell(); refreshPanel();
+  });
+  $('#ping-test').addEventListener('click', function () {
+    var btn = $('#ping-test'), note = $('#ping-test-note');
+    if (!myName) return;
+    btn.disabled = true; setTimeout(function () { btn.disabled = false; }, 10000);
+    note.hidden = false; note.textContent = 'Sending...';
+    codeFor(myName).then(function (code) { return post(code, 'This is a test.'); }).then(function (ok) {
+      note.textContent = ok ? 'Sent. Look at your phone. Nothing there? Check the code in the app.' : 'It did not work. Try again in a minute.';
+    }).catch(function () { note.textContent = 'It did not work. Check your connection. Then try again.'; });
+  });
+
   // Leave: hide the chat at once, tell the other person, then reload. The saved chat stays.
   $('#leave').addEventListener('click', function () {
-    $('#chat-screen').hidden = true; flush();
+    $('#chat-screen').hidden = true; flush(); lastKnocks();
     var go = function () { location.reload(); };
     publish({ t: 'b' }).then(go, go);
     setTimeout(go, 800);
@@ -1103,7 +1358,7 @@ header h1{font-size:20px;margin:0}
     var sb = $('#send'); sb.classList.remove('go'); void sb.offsetWidth; sb.classList.add('go');
     lastTs = Math.max(Date.now(), lastTs + 1);
     var m = { id: rid(14), ts: lastTs, name: me.name, text: text, mine: true, state: 'sending', lastSent: 0, u: !known };
-    add(m); render(m); refreshStatus();
+    add(m); render(m); refreshStatus(); wroteOne(m);
     sendMsg(m);
     box.focus();
   });

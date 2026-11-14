@@ -29,6 +29,7 @@ Tap the site name at the top left of the cover page **three times**, quickly. Th
 - **Photos.** Tap the picture button, or paste a picture into the message box. The photo is made smaller before it is sent, and what the camera wrote into the file (such as the place it was taken) is removed. Photos are saved with the chat. Tap one to see it large and to save it to your device.
 - **Delete chat.** Removes the chat and its photos for both people. This cannot be undone.
 - **Typing and presence.** The first letter of the other person's name pops up at the bottom while they are in the chat, with moving dots while they type.
+- **Notifications on your phone (you choose).** Tap **Notifications** in the chat and follow the steps. Your phone then tells you "New message" when the other person writes and you are not in the room. It needs the free app "ntfy". It is off until you turn it on, and you can turn it off again at any time.
 - **Hides when you look away.** Switch tab, switch app or click another window and the chat signs you out and turns into a harmless-looking page: a shop sale, a recipe or a word of the day, picked at random, with its own tab title and icon.
 
 ## How it works
@@ -37,18 +38,19 @@ Everything is in [`index.html`](index.html). There is no build step and no depen
 
 | Part | Detail |
 | --- | --- |
-| Key | The password is stretched with PBKDF2-SHA-256 (250,000 rounds) into 64 bytes: an AES-256-GCM key, the name of the meeting place, and the name of the saved chat. |
+| Key | The password is stretched with PBKDF2-SHA-256 (250,000 rounds) into 96 bytes: an AES-256-GCM key, the name of the meeting place, the name of the saved chat, and a key for notification codes. |
 | Transport | Encrypted packets are published over MQTT on WebSocket to three public brokers (HiveMQ, EMQX, Mosquitto) at once, so the chat keeps working if one is down. |
 | Packets | 12 random bytes (nonce) + AES-GCM ciphertext, padded to 1024, 2048, 4096… bytes so the length of a message is hidden. |
-| Replay guard | A packet is dropped if it does not decrypt, if its nonce was seen before, or if its clock is more than 10 minutes off. |
+| Replay guard | A packet is dropped if it does not decrypt, if its nonce was seen before, or if its clock is more than 10 minutes off. The one kept packet with the notification choices has no clock check; an old one cannot undo a newer choice. |
 | Photos | Redrawn in the browser as a JPEG (1280 px at most), then sent encrypted in pieces of 9,000 bytes. A phone that misses pieces asks for them again. |
 | Storage | IndexedDB, one encrypted record per message and per photo. No key or password is ever stored. |
+| Notifications | Only for people who turned them on. The writer's page sends [ntfy.sh](https://ntfy.sh) one small request: a code made from the password and the name, the fixed words "New message", and the address of the page. Never a name, never the text. The on/off choices travel encrypted; the relays keep one such packet so a phone learns them when it opens the room alone. |
 
 The comment at the top of the script in `index.html` describes the packet types, the delete mechanism and the sync protocol in full.
 
 ## Safety
 
-- **Nothing from outside.** A content security policy lets the page load no outside script, style or picture, and lets it talk only to the three relays.
+- **Nothing from outside.** A content security policy lets the page load no outside script, style or picture, and lets it talk only to the three relays and, for notifications, ntfy.sh. Nothing is sent to ntfy.sh unless someone in the room turned notifications on or asked for a test.
 - **No framing.** The page refuses to run inside another website.
 - **Short passwords need a second tap.** A password under 12 characters shows a warning first.
 - **Hides when you look away,** and also after 10 minutes without a touch.
@@ -64,6 +66,7 @@ The comment at the top of the script in `index.html` describes the packet types,
 - **Clearing browser data deletes the saved chat** on that device.
 - **Photos are for the new page only.** A phone that still has the old page open shows the word "Photo" until it is reloaded.
 - **A saved or screenshotted photo is out of the room.** Delete chat cannot reach a copy the other person has saved.
+- **Notifications use an outside service.** ntfy.sh cannot read the chat, but it can see that a message was written, and when. The notification code belongs to your name, so type the same name every time. Opening the ntfy app takes you away from the page, which signs you out: turn notifications on first.
 - **The cover is a disguise, not a lock.** The address bar still shows this site, and anyone who knows the three taps gets the sign-in form. The password still protects the chat.
 
 ## Run it yourself
