@@ -23,15 +23,12 @@ input,button,textarea{font:inherit;font-size:16px}
 #join-form{animation:rise .5s cubic-bezier(.2,.8,.2,1);width:100%;max-width:390px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px 24px;box-shadow:var(--shade)}
 .badge{width:52px;height:52px;border-radius:16px;background:var(--me);color:var(--meink);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
 h1{margin:0 0 4px;font-size:28px;letter-spacing:-.02em}
-.lead{margin:0 0 6px;color:var(--soft);font-size:15px}
-label{display:block;margin:16px 0 6px;font-weight:600;font-size:15px}
 input[type=text],input[type=password]{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);transition:border-color .15s,box-shadow .15s}
 input[type=text]:focus,input[type=password]:focus{outline:0;border-color:var(--me);box-shadow:0 0 0 3px color-mix(in srgb,var(--me) 22%,transparent)}
-.pw-row{display:flex;gap:8px}
+.pw-row{display:flex;gap:8px;margin-top:10px}
 .pw-row input{flex:1;min-width:0}
 .hint{margin:8px 0 0;color:var(--soft);font-size:14px}
 .hint.weak{color:var(--bad)}.hint.good{color:var(--ok)}
-.small{margin:16px 0 0;color:var(--soft);font-size:13px;text-align:center}
 button{border:0;border-radius:12px;background:var(--me);color:var(--meink);padding:13px 18px;font-weight:650;cursor:pointer;transition:transform .08s,opacity .15s}
 button:active{transform:scale(.97)}
 button.quiet{background:transparent;color:var(--ink);border:1px solid var(--line);padding:8px 13px;font-weight:500}
@@ -139,20 +136,14 @@ header h1{font-size:20px;margin:0}
 <main id="join-screen">
   <form id="join-form" autocomplete="off">
     <div class="badge"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg></div>
-    <h1>Room</h1>
-    <p class="lead">A private chat for two. Locked with a password only you two know.</p>
-    <label for="name">Your name</label>
-    <input id="name" type="text" maxlength="30" autocomplete="off" placeholder="Your name">
-    <label for="password">Password</label>
+    <!-- Nothing here says what the page is: two boxes and a button. Words show only when something is wrong. -->
+    <input id="name" type="text" maxlength="30" autocomplete="off" placeholder="Name" aria-label="Name">
     <div class="pw-row">
-      <input id="password" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Password">
+      <input id="password" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Password" aria-label="Password">
       <button id="show" type="button" class="quiet">Show</button>
     </div>
-    <p class="hint">Type the same password as the other person.</p>
-    <p id="pw-hint" class="hint">A long password is safer. Try 4 words in a row.</p>
     <p id="join-error" class="hint weak" hidden></p>
     <button id="join" type="submit">Go in</button>
-    <p class="small">Your chat is saved on this phone. It is locked with the password.</p>
   </form>
 </main>
 <section id="chat-screen" hidden>
@@ -1260,10 +1251,7 @@ header h1{font-size:20px;margin:0}
   window.addEventListener('resize', fit);
 
   $('#password').addEventListener('input', function () {
-    var n = $('#password').value.length, h = $('#pw-hint');
-    h.className = 'hint' + (n >= 20 ? ' good' : n ? ' weak' : '');
-    weakOk = false;
-    h.textContent = !n ? 'A long password is safer. Try 4 words in a row.' : n < 20 ? 'Make it longer. Four words in a row is a good password.' : 'Good. That is a strong password.';
+    weakOk = false;   // a changed password must pass the "short password" warning again
   });
   $('#show').addEventListener('click', function () {
     var p = $('#password'), hide = p.type === 'text';
