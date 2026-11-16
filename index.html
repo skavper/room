@@ -98,6 +98,18 @@ header h1{font-size:20px;margin:0}
 #bell-panel li button{display:block;margin-top:6px}
 #bell-panel a{color:var(--me)}
 .bell-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#set{padding:4px 9px;font-size:19px;line-height:1.2}
+#set-panel{animation:drop .25s;flex:none;max-height:62%;overflow-y:auto;padding:12px 16px 14px;background:var(--card);border-bottom:1px solid var(--line);font-size:15px}
+#set-panel h2{margin:0;font-size:17px}
+#set-panel h3{margin:16px 0 0;font-size:15px}
+#set-panel p{margin:6px 0}
+#set-panel button{padding:8px 14px}
+#verse{flex:none;display:block;margin:8px 12px 0;padding:8px 14px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);font-size:14px;font-weight:400;text-align:left}
+#verse span{display:block}
+#verse .v-ref{font-size:11.5px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:var(--me)}
+#verse .v-mean{margin-top:8px;color:var(--soft)}
+#verse:not([aria-expanded=true]) .v-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#verse:not([aria-expanded=true]) .v-mean{display:none}
 #ping-code{margin-top:6px;font-family:ui-monospace,Consolas,monospace;font-size:14px}
 #ping-open{display:block;margin-top:6px}
 #empty{margin:auto;color:var(--soft);text-align:center;padding:0 12px}
@@ -158,8 +170,10 @@ header h1{font-size:20px;margin:0}
       <div id="peer" data-online="false"><span class="dot"></span><span id="peer-text">Waiting for the other person</span></div>
       <div id="last" hidden></div>
     </div>
+    <button id="set" type="button" class="quiet" aria-label="Settings" aria-expanded="false">&#9881;&#65038;</button>
     <button id="leave" type="button" class="quiet">Leave</button>
   </header>
+  <button id="verse" type="button" aria-expanded="false" hidden></button>
   <div id="notice" class="note" hidden>No connection. Your messages will go out when it is back.</div>
   <div id="clock-note" class="note" hidden>The time on one phone looks wrong. Set the time to automatic on both phones.</div>
   <div id="save-note" class="note" hidden>Your chat cannot be saved on this phone. You can still chat.</div>
@@ -195,6 +209,19 @@ header h1{font-size:20px;margin:0}
       <li>The code belongs to your name. Type the same name every time.</li>
       <li>This uses the free service ntfy.sh. It can see that a message was sent, and when. It can never see what the message says.</li>
     </ul>
+  </div>
+  <div id="set-panel" hidden>
+    <div class="bell-top"><h2>Settings</h2><button id="set-close" type="button" class="quiet">Close</button></div>
+    <p class="hint">These two switches are for this phone only. The other person has their own.</p>
+    <h3>Stay signed in</h3>
+    <p id="stay-note">It is off. You type the password every time.</p>
+    <p class="hint">When it is on, this phone opens the chat without the password. Anyone who holds this phone can then read the chat. Tap Leave to sign out.</p>
+    <button id="stay-toggle" type="button">Turn on</button>
+    <p id="stay-fail" class="hint weak" hidden>This phone could not save it. You can still chat.</p>
+    <h3>Cover page</h3>
+    <p id="cover-note">It is on. When you look away, a cover page shows.</p>
+    <p class="hint">When it is off, the chat stays open when you look away.</p>
+    <button id="cover-toggle" type="button">Turn off</button>
   </div>
   <div id="messages" aria-live="polite"><p id="empty">No messages yet. Say hello!<small>Is the other person here, but you cannot see them? Then one password is different. Tap Leave and type it again.</small></p></div>
   <div id="here" data-on="false">
@@ -363,6 +390,11 @@ header h1{font-size:20px;margin:0}
       btn: 'See the archive' }
   ];
   var COVER_KEY = 'room-cover', covering = false, leaving = false, taps = 0, tapT = 0;
+  // Choices kept on this phone only. They are plain flags: they say nothing about the chat.
+  var STAY_KEY = 'room-stay', NOCOVER_KEY = 'room-nocover', VERSE_KEY = 'room-verse';
+  function flag(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function setFlag(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+  function coverOn() { return flag(NOCOVER_KEY) !== '1'; }
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
   function showCover(i) {
     var c = COVERS[i] || COVERS[0], box = $('#cover');
@@ -388,7 +420,7 @@ header h1{font-size:20px;margin:0}
     taps = 0;
     try { sessionStorage.removeItem(COVER_KEY); } catch (e) {}
     document.title = 'Room'; $('#icon').href = 'data:,';
-    $('#cover').hidden = true; $('#join-screen').hidden = false;
+    $('#cover').hidden = true; resume();
   }
   // Looked away while in a chat: put the cover up at once, tell the other person, then reload (that signs out).
   function cover() {
@@ -396,6 +428,7 @@ header h1{font-size:20px;margin:0}
     // A refresh or a closed tab also counts as "hidden" for a moment. That is not looking away:
     // the page is going anyway, and the next load must show the sign-in form, not the cover.
     if (leaving) return;
+    if (!coverOn()) return;   // the switch "Cover page" is off on this phone
     covering = true;
     var i = Math.floor(Math.random() * COVERS.length);
     showCover(i);
@@ -427,6 +460,86 @@ header h1{font-size:20px;margin:0}
         crypto.subtle.importKey('raw', bits.slice(64, 96), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])]);
     }).then(function (k) { key = k[0]; pingKey = k[1]; });
   }
+  /* ---------- stay signed in (only when the switch on this phone is on) ---------- */
+  // The keys are kept as locked browser keys: the page can use them, but they cannot be read out as text.
+  // The name is kept sealed with the room key. The password itself is never kept.
+  function stayDo(mode, fn) {
+    return new Promise(function (res, rej) {
+      var over = false, t = setTimeout(function () { over = true; rej(new Error('slow')); }, 6000);
+      var q = indexedDB.open('room-stay', 1);
+      q.onupgradeneeded = function () { q.result.createObjectStore('k'); };
+      q.onerror = function () { clearTimeout(t); rej(q.error); };
+      q.onsuccess = function () {
+        var d = q.result, out;
+        if (over) { d.close(); return; }
+        clearTimeout(t);
+        try {
+          var tx = d.transaction('k', mode), r = fn(tx.objectStore('k'));
+          r.onsuccess = function () { out = r.result; };
+          tx.oncomplete = function () { d.close(); res(out); };
+          tx.onerror = tx.onabort = function () { d.close(); rej(tx.error); };
+        } catch (e) { d.close(); rej(e); }
+      };
+    });
+  }
+  var stayGen = 0;          // goes up when the switch is turned off or Leave is tapped: a slow save must not undo that
+  function keep() {
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(me.name)).then(function (ct) {
+      return stayDo('readwrite', function (st) { return st.put({ t: topic, s: slot, k: key, p: pingKey, iv: iv, n: ct }, 'me'); });
+    });
+  }
+  function forget() {
+    return new Promise(function (res) {
+      try { var q = indexedDB.deleteDatabase('room-stay'); q.onsuccess = q.onerror = q.onblocked = function () { res(); }; }
+      catch (e) { res(); }
+      setTimeout(res, 3000);
+    });
+  }
+  // The page loaded, or the cover was tapped away: go straight in if this phone stays signed in, else show the form.
+  function resume() {
+    var f = flag(STAY_KEY), form = function () { if (!joined) $('#join-screen').hidden = false; };
+    if (f !== '1') forget();          // switched off, or signed out with Leave: nothing may be left behind
+    if (f !== '1' || joined) { form(); return; }
+    $('#join-screen').hidden = true;
+    stayDo('readonly', function (st) { return st.get('me'); }).then(function (r) {
+      if (!r || !r.k || !r.p || !/^room\/[0-9a-f]{32}$/.test(r.t) || !/^[0-9a-f]{32}$/.test(r.s)) throw new Error('none');
+      return crypto.subtle.decrypt({ name: 'AES-GCM', iv: r.iv }, r.k, r.n).then(function (b) {
+        var name = dec.decode(b).slice(0, 30);
+        if (!name || joined) throw new Error('none');
+        topic = r.t; slot = r.s; key = r.k; pingKey = r.p;
+        me.name = name; myName = norm(name);
+      });
+    }).then(enter, form);
+  }
+  function refreshSet() {
+    var stay = flag(STAY_KEY) === '1', cov = coverOn();
+    $('#stay-toggle').textContent = stay ? 'Turn off' : 'Turn on';
+    $('#stay-note').textContent = stay ? 'It is on. This phone opens the chat without the password.' : 'It is off. You type the password every time.';
+    $('#cover-toggle').textContent = cov ? 'Turn off' : 'Turn on';
+    $('#cover-note').textContent = cov ? 'It is on. When you look away, a cover page shows.' : 'It is off. No cover page shows.';
+  }
+
+  /* ---------- verse of the day ---------- */
+  // One verse for each day, picked by the date. The list is part of the page: nothing is fetched.
+  var VERSES = [
+    { ref: 'Psalm 34:6-8',
+      text: 'This poor man cried, and the LORD heard him, and saved him out of all his troubles. The angel of the LORD encampeth round about them that fear him, and delivereth them. O taste and see that the LORD is good: blessed is the man that trusteth in him.',
+      mean: 'When you are in trouble and call out to God, He hears you and helps you. He stays close to the people who respect Him, and He keeps them safe. Trust Him, and you will find out for yourself that He is good.' }
+  ];
+  function showVerse() {
+    var now = new Date(), day = Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
+    var v = VERSES[day % VERSES.length], box = $('#verse');
+    box.textContent = '';
+    box.appendChild(el('span', 'v-ref', 'Verse of the day \u00B7 ' + v.ref));
+    box.appendChild(el('span', 'v-text', v.text));
+    box.appendChild(el('span', 'v-mean', 'What it means: ' + v.mean));
+    // Open the first time each day, as a reminder. After that it is one line; a tap opens it.
+    box.setAttribute('aria-expanded', flag(VERSE_KEY) === String(day) ? 'false' : 'true');
+    setFlag(VERSE_KEY, String(day));
+    box.hidden = false;
+  }
+
   function seal(obj) {
     obj.v = 1; obj.s = me.sid; obj.at = Date.now();
     var iv = crypto.getRandomValues(new Uint8Array(12));
@@ -541,6 +654,8 @@ header h1{font-size:20px;margin:0}
   // Publish one encrypted packet to every connected relay. Resolves to how many got it.
   // keep: the relay keeps this packet (MQTT "retain") on the second topic. Only the choices 'w' use it.
   function publish(obj, keep) {
+    // Out of view with the cover off: the page still works, but it says "not in the room", so a knock can come.
+    if (!keep && obj.t !== 'b' && document.hidden && !coverOn()) obj.z = 1;
     return seal(obj).then(function (payload) {
       var frame = packet(keep ? 0x31 : 0x30, [str(keep ? topic + keep : topic), payload]), n = 0;   // keep: '/w', or '/u/' + a box
       relays.forEach(function (r) { if (r.ready && r.ws && r.ws.readyState === 1) { try { r.ws.send(frame); n++; } catch (e) { r.drop(true); } } });
@@ -682,6 +797,7 @@ header h1{font-size:20px;margin:0}
   }
   function beat() {
     if (!joined || !readyCount()) return;
+    if (document.hidden && !coverOn()) return;   // out of view with the cover off: not in the room, so a knock can come
     var o = { t: 'p', n: me.name, h: recent().map(function (m) { return m.id; }), g: gen, c: summary() };
     if (want.size) o.w = wantList();     // the choices for notifications on the phone, as far as we know them
     o.d = Math.max(0, Math.floor((Date.now() - lastAct) / 1000));   // how long ago this person touched the page
@@ -707,7 +823,8 @@ header h1{font-size:20px;margin:0}
     $('#clock-note').hidden = true;
     var fresh = !clockOff.has(o.s);
     if (fresh) { clockOff.set(o.s, gap); boxClock(o.s, gap); }
-    if (o.t !== 'b') {
+    var out = o.z === 1;      // sent by a page that is out of view (its cover is off): not in the room
+    if (o.t !== 'b' && !out) {
       peerSeen = Date.now(); if (typeof o.n === 'string') peerName = o.n.slice(0, 30);
       if (o.t === 'p' && int(o.d, 0, 1e6)) peerAct = Date.now() - o.d * 1000;
       else if (o.t === 'm' || o.t === 'y') peerAct = Date.now();   // they wrote: they are at the page now
@@ -715,7 +832,7 @@ header h1{font-size:20px;margin:0}
     }
     // Who is in the room, by name. A page in the room is in view: looking away signs out.
     if (o.t === 'b') here.delete(o.s);
-    else {
+    else if (!out) {
       var h = here.get(o.s);
       if (typeof o.n === 'string') {
         if (!h) { h = { n: '', t: 0 }; here.set(o.s, h); }
@@ -1403,7 +1520,17 @@ header h1{font-size:20px;margin:0}
     relays.forEach(function (r) { r.connect(); });
   }
   function wake() { if (started) relays.forEach(function (r) { r.wake(); }); beat(); ackLater(); }
-  document.addEventListener('visibilitychange', function () { if (document.hidden) { flush(); cover(); } else wake(); });
+  // Out of view with the cover off: the phone may put the page to sleep. Save, and leave what nobody got with the relays.
+  function away() {
+    if (!joined || leaving || covering) return;
+    lastKnocks();
+    try { boxSend(true).then(null, function () {}); } catch (e) {}
+    try { publish({ t: 'b' }).then(null, function () {}); } catch (e) {}   // "not in the room now": the other phone may knock
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) { wake(); return; }
+    flush(); if (coverOn()) cover(); else away();
+  });
   // Another window or app took the focus (the page may still be in view).
   window.addEventListener('blur', function () { setTimeout(function () { if (!document.hasFocus()) cover(); }, 200); });
   window.addEventListener('focus', function () { if (picking) endPick(); });
@@ -1454,11 +1581,26 @@ header h1{font-size:20px;margin:0}
     me.name = name.slice(0, 30); myName = norm(me.name);
     derive(pw).then(function () {
       $('#password').value = ''; $('#password').type = 'password';
+      enter();
+      // This phone stays signed in: keep the keys for the next visit.
+      if (flag(STAY_KEY)) {
+        var g = stayGen;
+        keep().then(function () {
+          if (g === stayGen) setFlag(STAY_KEY, '1'); else if (flag(STAY_KEY) !== '1') forget();
+          refreshSet();
+        }, function () {});
+      }
+    }).catch(function () {
+      $('#join').disabled = false; fail('Something went wrong. Please try again.');
+    });
+  });
+  function enter() {
+      if (joined) return;
       joined = true; startedAt = lastAct = Date.now();
       $('#join-screen').hidden = true; $('#chat-screen').hidden = false;
       fit(); $('#text').focus();
-      if (document.hidden) { cover(); return; }   // looked away while the password was being checked
-      refreshPanel();
+      if (document.hidden && coverOn()) { cover(); return; }   // looked away while the password was being checked
+      refreshPanel(); refreshSet(); showVerse();
       if (myName) codeFor(myName).then(function (c) {      // this person's code, for the app "ntfy"
         $('#ping-code').value = c;
         if (/Android/i.test(navigator.userAgent)) { var a = $('#ping-open'); a.href = 'ntfy://ntfy.sh/' + c; a.hidden = false; }
@@ -1480,10 +1622,7 @@ header h1{font-size:20px;margin:0}
         here.forEach(function (h, s) { if (Date.now() - h.t > PEER_TTL) here.delete(s); });
         knocks();
       }, 2000);
-    }).catch(function () {
-      $('#join').disabled = false; fail('Something went wrong. Please try again.');
-    });
-  });
+  }
 
   // Delete chat: ask first. Yes moves the room to a new generation and empties it here, at once.
   $('#clear').addEventListener('click', function () { $('#clear-ask').hidden = false; });
@@ -1496,8 +1635,34 @@ header h1{font-size:20px;margin:0}
   });
 
   // Notifications: the panel, the code, the switch and the test.
+  function shut(panel, btn) { $(panel).hidden = true; $(btn).setAttribute('aria-expanded', 'false'); }
+  $('#set').addEventListener('click', function () {
+    var p = $('#set-panel'); p.hidden = !p.hidden; shut('#bell-panel', '#bell');
+    $('#set').setAttribute('aria-expanded', p.hidden ? 'false' : 'true');
+  });
+  $('#set-close').addEventListener('click', function () { shut('#set-panel', '#set'); });
+  $('#stay-toggle').addEventListener('click', function () {
+    var btn = $('#stay-toggle');
+    if (!joined || btn.disabled) return;
+    $('#stay-fail').hidden = true;
+    if (flag(STAY_KEY) === '1') { stayGen++; setFlag(STAY_KEY, null); forget(); refreshSet(); return; }
+    var g = stayGen;
+    btn.disabled = true;
+    keep().then(function () {
+      if (g !== stayGen) { if (flag(STAY_KEY) !== '1') forget(); return; }   // Leave was tapped meanwhile
+      if (!setFlag(STAY_KEY, '1')) throw new Error('flag');
+    }).catch(function () {
+      setFlag(STAY_KEY, null); forget(); $('#stay-fail').hidden = false;
+    }).then(function () { btn.disabled = false; refreshSet(); });
+  });
+  $('#cover-toggle').addEventListener('click', function () {
+    setFlag(NOCOVER_KEY, coverOn() ? '1' : null); lastAct = Date.now(); refreshSet();
+  });
+  $('#verse').addEventListener('click', function () {
+    var v = $('#verse'); v.setAttribute('aria-expanded', v.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');
+  });
   $('#bell').addEventListener('click', function () {
-    var p = $('#bell-panel'); p.hidden = !p.hidden;
+    var p = $('#bell-panel'); p.hidden = !p.hidden; shut('#set-panel', '#set');
     $('#bell').setAttribute('aria-expanded', p.hidden ? 'false' : 'true');
   });
   $('#bell-close').addEventListener('click', function () { $('#bell-panel').hidden = true; $('#bell').setAttribute('aria-expanded', 'false'); });
@@ -1536,8 +1701,11 @@ header h1{font-size:20px;margin:0}
   $('#leave').addEventListener('click', function () {
     covering = true;   // leaving on purpose: no cover now, and none after the reload
     $('#chat-screen').hidden = true; flush(); lastKnocks();
+    // Leave signs out for real: the kept keys go. The switch stays, so the next sign-in keeps them again.
+    stayGen++;
+    if (flag(STAY_KEY) === '1') setFlag(STAY_KEY, '2');
     var go = function () { location.reload(); };
-    bye().then(go, go);
+    Promise.all([bye(), forget()]).then(go, go);
     setTimeout(go, 800);
   });
 
@@ -1580,6 +1748,8 @@ header h1{font-size:20px;margin:0}
     var now = Date.now();
     if (now - lastTypingSent > 2000) { lastTypingSent = now; publish({ t: 'y' }); }
   });
+  // No cover on the screen: go straight in if this phone stays signed in.
+  if ($('#cover').hidden && flag(STAY_KEY)) { $('#join-screen').hidden = true; resume(); }
 })();
 </script>
 </body>

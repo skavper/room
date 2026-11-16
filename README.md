@@ -34,6 +34,10 @@ If the other person is in but you cannot see each other, one of the passwords is
 - **Typing and presence.** The first letter of the other person's name pops up at the bottom while they are in the chat, with moving dots while they type.
 - **Notifications on your phone (you choose).** Tap **Notifications** in the chat and follow the steps. Your phone then tells you "New message" when the other person writes and you are not in the room. It needs the free app "ntfy". It is off until you turn it on, and you can turn it off again at any time.
 - **Hides when you look away.** Switch tab, switch app or click another window and the chat signs you out and turns into a harmless-looking page: a shop sale, a recipe or a word of the day, picked at random, with its own tab title and icon.
+- **Settings for this phone only.** Tap the gear at the top of the chat. Both switches change only the phone you tap them on.
+  - **Stay signed in** (off at first). When it is on, this phone opens the chat without the password. **Leave** still signs out.
+  - **Cover page** (on at first). When it is off, no cover page shows and the chat stays open when you look away.
+- **Verse of the day.** A Bible verse shows at the top of the chat, with a few words on what it means. It is open the first time each day, then a small bar. Tap it to open or fold it. For now it is Psalm 34:6-8 (King James Version).
 
 ## How it works
 
@@ -75,6 +79,8 @@ The comment at the top of the script in `index.html` describes the packet types,
 - **Photos are for the new page only.** A phone that still has the old page open shows the word "Photo" until it is reloaded.
 - **A saved or screenshotted photo is out of the room.** Delete chat cannot reach a copy the other person has saved.
 - **Notifications use an outside service.** ntfy.sh cannot read the chat, but it can see that a message was written, and when. The notification code belongs to your name, so type the same name every time. Opening the ntfy app takes you away from the page, which signs you out: turn notifications on first.
+- **Stay signed in keeps the keys on the phone.** They are stored as locked browser keys that cannot be read out as text, and the password is never stored. But anyone who holds the unlocked phone can open the chat. Turn it on only on a phone that is yours alone.
+- **With the cover off the chat stays on the screen.** Anyone who picks up the phone sees it.
 - **The cover is a disguise, not a lock.** The address bar still shows this site, and anyone who refreshes the page or knows the three taps gets the sign-in form. The password still protects the chat.
 
 ## Run it yourself
