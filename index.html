@@ -316,6 +316,14 @@ header h1{font-size:20px;margin:0}
     synced like any message, and an old page shows the word "Photo". The bytes travel in 'i' packets.
     A phone that misses pieces asks for them with 'q'. A photo is saved as one more encrypted record.
     A received photo is only ever shown as an image/jpeg blob in an <img>.
+  - Kept pieces: the bytes of a photo or voice note also rest on the relays, so they arrive also when the
+    two people are never in the room at the same time. The writer sends every piece 'i' (with f: 1),
+    sealed and padded like every packet, with the MQTT "retain" flag to the topic + "/f/" + message id +
+    "/" + piece number (older pages never ask for it). A phone that holds the message but not the bytes
+    asks the relays for the topic + "/f/" + id + "/+" (the 8 newest at most) and gets what they keep. Once
+    it holds every piece it tells the relays to forget them (an empty kept packet). A kept piece may be
+    old: it only fills a photo or voice note whose message we already have. A phone that is still asked
+    with 'q' sends the pieces too, as before. A delete tells the relays to forget the newest ones.
   - Notifications on the phone: through the free service ntfy.sh, only for people who turned it on.
     Every name has a code: HMAC-SHA-256 with the key from bytes 64-95 over the name in plain form
     (trimmed, lower case). The key stays in memory. The code cannot be linked to the topic or to the
@@ -339,8 +347,8 @@ header h1{font-size:20px;margin:0}
     every packet, sent with the MQTT "retain" flag to the topic + "/u/" + a code for the name (HMAC
     with the key from bytes 64-95; older pages never ask for it). A relay keeps the last one and
     hands it to every page that connects. The box holds what this person wrote and nobody got yet
-    (m: the 30 newest at most; of a photo only the small message, the bytes come when both are in
-    the room) and the ids of the last messages this person got from others (h). So a message reaches
+    (m: the 30 newest at most; of a photo only the small message, the bytes are kept apart, see Kept
+    pieces) and the ids of the last messages this person got from others (h). So a message reaches
     a person who opens the room alone, and the writer later sees "Delivered", also alone. The box is
     sent again a moment after its content changes, once a minute, and when the page signs out.
     Everything in it is taken in the same way as from a bundle; an old copy does no harm.
@@ -376,7 +384,7 @@ header h1{font-size:20px;margin:0}
   var els = new Map();      // id -> element
   var seen = new Map();     // packet nonce -> time first seen (replay guard and relay dedupe)
   var clockOff = new Map(); // sender id -> our clock minus their clock
-  var lastTs = 0, peerSeen = 0, peerName = '', typingTimer = 0, lastTypingSent = 0;
+  var subNo = 1, lastTs = 0, peerSeen = 0, peerName = '', typingTimer = 0, lastTypingSent = 0;
   var joined = false, started = false, startedAt = 0, everReady = false;
   var slot = '', db = null, chain = null, dirty = [], saveTimer = 0, epoch = 0, noteShown = false;
   var gen = 0, known = false;   // room generation; known = we heard it from a phone or the saved copy
@@ -603,7 +611,7 @@ header h1{font-size:20px;margin:0}
   }
   function concat(a, b) { if (!a.length) return b; var o = new Uint8Array(a.length + b.length); o.set(a, 0); o.set(b, a.length); return o; }
 
-  function Relay(url) { this.url = url; this.ws = null; this.ready = false; this.tries = 0; this.timer = 0; this.ping = 0; this.lastRx = 0; this.buf = new Uint8Array(0); this.cto = 0; }
+  function Relay(url) { this.url = url; this.ws = null; this.ready = false; this.tries = 0; this.timer = 0; this.ping = 0; this.lastRx = 0; this.buf = new Uint8Array(0); this.cto = 0; this.subs = new Set(); }
   Relay.prototype.connect = function () {
     var r = this;
     if (r.ws && r.ws.readyState <= 1) return;
@@ -622,7 +630,7 @@ header h1{font-size:20px;margin:0}
   };
   Relay.prototype.drop = function (fast) {
     var r = this, ws = r.ws;
-    r.ws = null; r.ready = false; clearTimeout(r.cto); clearInterval(r.ping);
+    r.ws = null; r.ready = false; r.subs = new Set(); clearTimeout(r.cto); clearInterval(r.ping);
     if (ws) { ws.onopen = ws.onmessage = ws.onclose = ws.onerror = null; try { ws.close(); } catch (e) {} }
     r.schedule(fast);
     refreshStatus();
@@ -652,6 +660,7 @@ header h1{font-size:20px;margin:0}
       r.ws.send(packet(0x82, [new Uint8Array([0, 1]), str(topic), new Uint8Array([0]), str(topic + '/w'), new Uint8Array([0]),
         str(topic + '/u/+'), new Uint8Array([0])]));   // and the kept boxes of waiting messages
     } else if (type === 9) {
+      if (p[0] !== 0 || p[1] !== 1) return;          // the answer to a later ask (kept pieces): nothing to do
       if (p[2] === 0x80) { r.drop(); return; }
       r.ready = true; r.tries = 0; everReady = true; clearTimeout(r.cto);
       clearInterval(r.ping);
@@ -679,12 +688,12 @@ header h1{font-size:20px;margin:0}
   function readyCount() { return relays.filter(function (r) { return r.ready; }).length; }
 
   // Publish one encrypted packet to every connected relay. Resolves to how many got it.
-  // keep: the relay keeps this packet (MQTT "retain") on the second topic. Only the choices 'w' use it.
+  // keep: the relay keeps this packet (MQTT "retain") on a second topic: the choices 'w', the boxes 'u', the pieces 'i'.
   function publish(obj, keep) {
     // Out of view with the cover off: the page still works, but it says "not in the room", so a knock can come.
     if (!keep && obj.t !== 'b' && document.hidden && !coverOn()) obj.z = 1;
     return seal(obj).then(function (payload) {
-      var frame = packet(keep ? 0x31 : 0x30, [str(keep ? topic + keep : topic), payload]), n = 0;   // keep: '/w', or '/u/' + a box
+      var frame = packet(keep ? 0x31 : 0x30, [str(keep ? topic + keep : topic), payload]), n = 0;   // keep: '/w', '/u/' + a box, or '/f/' + id + '/' + piece
       relays.forEach(function (r) { if (r.ready && r.ws && r.ws.readyState === 1) { try { r.ws.send(frame); n++; } catch (e) { r.drop(true); } } });
       return n;
     });
@@ -837,6 +846,7 @@ header h1{font-size:20px;margin:0}
   function onReady() {
     if (readyCount() === 1) readyAt = Date.now();     // the first relay is there
     beat(); resendUnseen(null); knocks(); tellSoon(2500);
+    if (readyCount() === 1) rekeep();
     boxTag = ''; boxSoon(2000);          // this relay may hold an old box, or none
   }
 
@@ -846,6 +856,8 @@ header h1{font-size:20px;margin:0}
     if (o.t === 'w') { heard(o.w); return; }
     // A box that a relay kept: what one person wrote and nobody got yet. It may be old too.
     if (o.t === 'u') { onBox(o); return; }
+    // A piece of a photo or voice note that a relay kept. It may be old; it only fills a message we already have.
+    if (o.t === 'i' && o.f === 1) { onPiece(o); return; }
     var gap = Date.now() - o.at;
     if (Math.abs(gap) > SKEW) { if (!peerSeen) $('#clock-note').hidden = false; return; }   // old recording, or a wrong clock
     // No generation, and sealed before the last delete: an old recording, played again.
@@ -1139,6 +1151,7 @@ header h1{font-size:20px;margin:0}
   function resetTo(g, keep, soft) {
     gen = g; epoch++; dirty = []; clearTimeout(saveTimer); saveTimer = 0;
     outq = []; pend = []; sentAt.clear(); asked = {};
+    recent().filter(function (m) { return md(m) && keep.indexOf(m) < 0; }).slice(-10).forEach(unkeep);   // nothing kept stays behind
     log.clear(); els.clear();
     var kept = new Map();
     keep.forEach(function (m) { var p = pics.get(m.id); if (p) kept.set(m.id, p); });
@@ -1249,7 +1262,8 @@ header h1{font-size:20px;margin:0}
     var o = outq.shift() || bundle();
     if (!o) return;
     if (!readyCount()) { outq = []; pend = []; sentAt.clear(); return; }   // the next beat starts it again
-    publish(o);
+    var kp = o.kp; delete o.kp;
+    publish(o, kp);
     pumpT = setTimeout(function () { pumpT = 0; pump(); }, o.t === 'i' ? 200 : 350);
   }
 
@@ -1300,6 +1314,7 @@ header h1{font-size:20px;margin:0}
     p.parts.forEach(function (x) { if (off + x.length > all.length) ok = false; else all.set(x, off); off += x.length; });
     if (!ok || off !== md(m).z) { pics.delete(m.id); repaint(m.id); return; }   // the pieces do not add up: start again
     setPic(m.id, all);
+    follow(m.id, false); unkeep(m);                   // we hold it: the relays need not keep it any longer
   }
   // Ask for the pieces of one photo we do not hold yet. One ask at a time.
   function wantPics() {
@@ -1366,17 +1381,49 @@ header h1{font-size:20px;margin:0}
         mine: true, state: 'sending', lastSent: 0, u: !known };
       setPic(m.id, r.bytes);
       add(m); render(m); refreshStatus(); wroteOne(m);
-      sendMsg(m).then(function () {
-        if (!peerSeen) return;                             // nobody there: they ask for it when they come
-        pushAll(m);
-      });
+      sendMsg(m).then(function () { keepAll(m); });   // the relays keep the pieces until the other phone has them
     }).catch(function () {
       $('#pic-note').hidden = false; clearTimeout(picNoteT);
       picNoteT = setTimeout(function () { $('#pic-note').hidden = true; }, 6000);
     });
   }
   function endPick() { setTimeout(function () { picking = false; if (document.hidden) cover(); }, 800); }
-  function pushAll(m) { var all = []; for (var k = 0; k < md(m).n; k++) all.push(k); pushPic(m, all); }
+  /* ---------- kept pieces: the relays hold the bytes until the other phone has them ---------- */
+  function keepAll(m) {
+    var p = pics.get(m.id);
+    if (!p || !p.bytes || !md(m)) return;
+    for (var k = 0; k < md(m).n; k++) outq.push({ t: 'i', g: gen, id: m.id, k: k, f: 1, d: b64(p.bytes.subarray(k * CHUNK, (k + 1) * CHUNK)), kp: '/f/' + m.id + '/' + k });
+    pump();
+  }
+  // Ask the relays for (on) or stop asking for (off) the kept pieces of one photo or voice note.
+  function follow(id, on) {
+    relays.forEach(function (r) {
+      if (!r.ready || !r.ws || r.ws.readyState !== 1 || r.subs.has(id) === on) return;
+      subNo = subNo % 60000 + 2;                     // never 1: that number is the first ask, the one that means "ready"
+      var no = new Uint8Array([subNo >> 8, subNo & 255]), t = str(topic + '/f/' + id + '/+');
+      try { r.ws.send(on ? packet(0x82, [no, t, new Uint8Array([0])]) : packet(0xA2, [no, t])); } catch (e) { r.drop(true); return; }
+      if (on) r.subs.add(id); else r.subs.delete(id);
+    });
+  }
+  // The 8 newest photos and voice notes whose bytes we do not hold yet: ask the relays for them.
+  function wantKept() {
+    if (!readyCount()) return;
+    var miss = [];
+    log.forEach(function (m) { var p = pics.get(m.id); if (md(m) && !(p && p.url)) miss.push(m); });
+    miss.sort(function (a, b) { return b.ts - a.ts; }).slice(0, 8).forEach(function (m) { follow(m.id, true); });
+  }
+  // Tell the relays to forget the kept pieces of this one (an empty kept packet does that).
+  function unkeep(m) {
+    if (!md(m)) return;
+    var frames = [];
+    for (var k = 0; k < md(m).n; k++) frames.push(packet(0x31, [str(topic + '/f/' + m.id + '/' + k)]));
+    relays.forEach(function (r) {
+      if (!r.ready || !r.ws || r.ws.readyState !== 1) return;
+      try { frames.forEach(function (f) { r.ws.send(f); }); } catch (e) { r.drop(true); }
+    });
+  }
+  // A new connection: keep again what this phone sent and nobody got yet (the first try may have been cut off).
+  function rekeep() { recent().forEach(function (m) { if (m.mine && md(m) && m.state !== 'seen' && m.state !== 'opened') keepAll(m); }); }
 
   /* ---------- voice notes: recorded with a tap, sent in pieces like a photo ---------- */
   function fmtDur(s) { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
@@ -1518,7 +1565,7 @@ header h1{font-size:20px;margin:0}
           t: /^audio\/mp4/.test(mime) ? 1 : /^audio\/ogg/.test(mime) ? 2 : 0 },
         mine: true, state: 'sending', lastSent: 0, u: !known };
       add(m); setPic(m.id, bytes); render(m); refreshStatus(); wroteOne(m);
-      sendMsg(m).then(function () { if (peerSeen) pushAll(m); });   // nobody there: they ask for it when they come
+      sendMsg(m).then(function () { keepAll(m); });   // the relays keep the pieces until the other phone has them
     }, micNote);
   }
 
@@ -1796,7 +1843,7 @@ header h1{font-size:20px;margin:0}
       setInterval(beat, BEAT);
       setInterval(function () {
         if (peerSeen && Date.now() - peerSeen > PEER_TTL) { peerSeen = 0; setPeer(false); }
-        prune(); refreshStatus(); wantPics(); lastLine();
+        prune(); refreshStatus(); wantPics(); wantKept(); lastLine();
         if (Date.now() - boxAt > 60000) boxSoon();       // once a minute: the box says "still here"
         if (picking && Date.now() > pickUntil) { picking = false; if (document.hidden) cover(); }
         if (Date.now() - lastAct > IDLE) cover();        // nobody touched the page for 10 minutes
