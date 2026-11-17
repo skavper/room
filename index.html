@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="robots" content="noindex">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; connect-src wss://broker.hivemq.com:8884 wss://broker.emqx.io:8084 wss://test.mosquitto.org:8081 https://ntfy.sh; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; media-src blob:; connect-src wss://broker.hivemq.com:8884 wss://broker.emqx.io:8084 wss://test.mosquitto.org:8081 https://ntfy.sh; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="color-scheme" content="light dark">
 <title>Room</title>
 <link id="icon" rel="icon" href="data:,">
@@ -131,7 +131,23 @@ header h1{font-size:20px;margin:0}
 #send.go svg{animation:launch .38s}
 #text{transition:border-color .15s,box-shadow .15s}
 #empty{animation:fade .5s}
-#attach{background:transparent;color:var(--soft);border:1px solid var(--line)}
+#attach,#mic,#rec-cancel{background:transparent;color:var(--soft);border:1px solid var(--line)}
+#rec{display:none;flex:1;min-width:0;align-items:center;gap:10px}
+#composer[data-rec]>:not(#rec){display:none}
+#composer[data-rec] #rec{display:flex}
+.rec-dot{flex:none;width:11px;height:11px;border-radius:50%;background:#e5484d;animation:blink 1.1s infinite}
+#rec-time{font-weight:650;font-variant-numeric:tabular-nums}
+.rec-max{flex:1;font-size:13px;color:var(--soft)}
+@keyframes blink{50%{opacity:.25}}
+.msg-vn{flex:1;min-width:0;max-width:280px;display:flex;align-items:center;gap:10px;margin:2px 0;padding:5px 12px 5px 5px;border-radius:24px;background:var(--them)}
+.vn-play{flex:none;width:38px;height:38px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.vn-play::before{content:'';margin-left:3px;border-style:solid;border-width:7px 0 7px 12px;border-color:transparent transparent transparent currentColor}
+.msg-vn[data-on] .vn-play::before{margin:0;width:4px;height:14px;border-width:0 4px;border-color:currentColor}
+.vn-play:disabled{opacity:.4;cursor:default}
+.vn-bar{flex:1;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.vn-bar i{display:block;height:100%;width:0;background:var(--c)}
+.vn-time{flex:none;font-size:12px;color:var(--soft);font-variant-numeric:tabular-nums}
+.vn-wait{flex:1;font-size:13px;color:var(--soft)}
 #viewer{animation:fade .18s;position:absolute;inset:0;z-index:5;background:rgba(0,0,0,.93);display:flex;flex-direction:column}
 #viewer-img{animation:zoom .24s cubic-bezier(.2,.8,.2,1);flex:1;min-height:0;width:100%;object-fit:contain}
 .viewer-bar{display:flex;gap:10px;justify-content:center;padding:12px;padding-bottom:max(12px,env(safe-area-inset-bottom))}
@@ -178,6 +194,7 @@ header h1{font-size:20px;margin:0}
   <div id="clock-note" class="note" hidden>The time on one phone looks wrong. Set the time to automatic on both phones.</div>
   <div id="save-note" class="note" hidden>Your chat cannot be saved on this phone. You can still chat.</div>
   <div id="pic-note" class="note" hidden>That photo could not be sent. Try another one.</div>
+  <div id="mic-note" class="note" hidden>The voice note could not be recorded. Allow the microphone for this page. Then try again.</div>
   <div id="loc-note" class="note" hidden>Your location could not be read. Turn on location for this page. Then try again.</div>
   <div id="tools"><button id="loc" type="button" class="quiet">Ask for location</button><button id="bell" type="button" class="quiet" aria-expanded="false">Notifications</button><button id="clear" type="button" class="quiet">Delete chat</button></div>
   <div id="clear-ask" class="note" hidden>
@@ -231,6 +248,12 @@ header h1{font-size:20px;margin:0}
   <form id="composer" autocomplete="off">
     <button id="attach" type="button" class="round" aria-label="Send a photo" title="Send a photo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg></button>
     <input id="file" type="file" accept="image/*" hidden>
+    <button id="mic" type="button" class="round" aria-label="Record a voice note" title="Record a voice note"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+    <div id="rec" role="group" aria-label="Recording a voice note">
+      <button id="rec-cancel" type="button" class="round" aria-label="Cancel the voice note" title="Cancel"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <span class="rec-dot" aria-hidden="true"></span><span id="rec-time">0:00</span><span class="rec-max">/ 2:00</span>
+      <button id="rec-send" type="button" class="round" aria-label="Send the voice note" title="Send"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
+    </div>
     <input id="text" type="text" maxlength="2000" enterkeyhint="send" autocomplete="off" placeholder="Type a message">
     <button id="send" type="submit" class="round" aria-label="Send" title="Send"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
   </form>
@@ -254,9 +277,10 @@ header h1{font-size:20px;margin:0}
   - Opened: the "got it" packet also says o: 1 when the message is on the screen of the other
     person (the page is in view). Then it shows "Opened", not "Delivered". Old pages ignore o.
   - JSON fields: v (version), s (sender id, random per page), at (sender clock when sealed), t (type):
-      m  message   {id, ts, n: name, x: text, g, im, lc}   im = {n, z, w, h} when it is a photo;
+      m  message   {id, ts, n: name, x: text, g, im, vn, lc}   im = {n, z, w, h} when it is a photo;
+                   vn = {n, z, d: seconds, t: 0 webm, 1 mp4, 2 ogg} when it is a voice note (x is "Voice note");
                    lc = 1 "where are you?" or [lat, lon, metres] a location (see Location)
-      i  photo     {g, id, k, d}   piece k of the photo of message id (9000 bytes, base64)
+      i  photo     {g, id, k, d}   piece k of the photo or voice note of message id (9000 bytes, base64)
       q  ask       {g, id, k: [pieces]}   "send me these pieces of that photo"
       a  got it    {i: [ids], o}
       p  here      {n: name, h: [recent ids], g, c, w, d}   every 8 s; the author re-sends what is missing;
@@ -266,7 +290,7 @@ header h1{font-size:20px;margin:0}
       y  typing
       b  leaving
       w  choices   {w}   for notifications; a relay keeps it (see Notifications)
-      u  box       {n: name, g, m: [{id, ts, x, im, lc}], h: [ids]}   a relay keeps it (see Waiting messages)
+      u  box       {n: name, g, m: [{id, ts, x, im, vn, lc}], h: [ids]}   a relay keeps it (see Waiting messages)
   - A packet is dropped when it does not decrypt (wrong password or changed), when its nonce was
     seen before (a replay, or the same packet from a second relay), or when its clock is more than
     10 minutes away from ours (an old recording). Only the kept packets 'w' and 'u' may be older.
@@ -340,6 +364,7 @@ header h1{font-size:20px;margin:0}
   var RELAYS = ['wss://broker.hivemq.com:8884/mqtt', 'wss://broker.emqx.io:8084/mqtt', 'wss://test.mosquitto.org:8081/mqtt'];
   var SALT = 'room-chat-v1-salt', ROUNDS = 250000, PAD = 1024, KEEP = 40, BEAT = 8000, PEER_TTL = 24000, TYPING_TTL = 6000, SKEW = 600000;
   var CHUNK = 9000, PIC_AIM = 200000, PIC_MAX = 600000, IDLE = 600000;
+  var VN_TYPES = ['audio/webm', 'audio/mp4', 'audio/ogg'], VN_MAX = 120, VN_BYTES = 560000;   // a voice note: 2 minutes at most
   var NTFY = 'https://ntfy.sh/', PING_GAP = 120000;
   var enc = new TextEncoder(), dec = new TextDecoder();
   if (window.top !== window.self) { document.body.textContent = ''; return; }   // never run inside another page
@@ -359,6 +384,7 @@ header h1{font-size:20px;margin:0}
   var unopened = [];        // ids we got while the page was out of view
   var pics = new Map();     // message id -> {parts, got, bytes, url, t: last piece, q: last ask}
   var picking = false, pickUntil = 0, lastAct = Date.now(), weakOk = false, picNoteT = 0;
+  var rec = null, player = null, playId = '', micNoteT = 0;   // the voice note being recorded; the one playing
   var emptyEl = $('#empty');
   var pingKey = null, myName = '';   // myName = this person's name in plain form (see norm)
   var want = new Map();     // plain name -> {v: 1 (tell my phone) or 0 (do not), c: when it was chosen}
@@ -430,6 +456,7 @@ header h1{font-size:20px;margin:0}
     if (leaving) return;
     if (!coverOn()) return;   // the switch "Cover page" is off on this phone
     covering = true;
+    stopRec(false); stopPlay();
     var i = Math.floor(Math.random() * COVERS.length);
     showCover(i);
     $('#messages').textContent = '';
@@ -712,7 +739,7 @@ header h1{font-size:20px;margin:0}
     var e = document.createElement('div');
     e.className = 'msg'; e.dataset.from = m.mine ? 'me' : 'them'; e.dataset.name = m.name; e.dataset.ts = m.ts; e.dataset.id = m.id;
     var n = document.createElement('div'); n.className = 'msg-name'; n.textContent = m.name;
-    var t; if (m.im) t = picBox(m); else if (m.lc) t = locBox(m); else { t = document.createElement('div'); t.className = 'msg-text'; t.textContent = m.text; }
+    var t; if (m.im) t = picBox(m); else if (m.vn) t = voiceBox(m); else if (m.lc) t = locBox(m); else { t = document.createElement('div'); t.className = 'msg-text'; t.textContent = m.text; }
     var meta = document.createElement('div'); meta.className = 'msg-meta';
     var tm = document.createElement('span'); tm.textContent = fmtTime(m.ts);
     var sp = document.createElement('span'); sp.className = 'msg-state'; sp.textContent = stateText(m);
@@ -748,7 +775,7 @@ header h1{font-size:20px;margin:0}
   }
   // One gate for every message, from a packet, a bundle or the saved copy. Gives a safe message, or null.
   function int(v, lo, hi) { return typeof v === 'number' && v % 1 === 0 && v >= lo && v <= hi; }
-  function clean(id, ts, n, x, im, lc) {
+  function clean(id, ts, n, x, im, lc, vn) {
     if (typeof id !== 'string' || !/^[0-9a-z]{8,40}$/.test(id) || typeof x !== 'string' || !x ||
       typeof ts !== 'number' || !(ts > 1e11 && ts < 1e14)) return null;
     var text = x.slice(0, 4000);
@@ -756,6 +783,8 @@ header h1{font-size:20px;margin:0}
     var m = { id: id, ts: ts, name: typeof n === 'string' && n ? n.slice(0, 30) : 'Friend', text: text };
     if (im && typeof im === 'object' && int(im.n, 1, 80) && int(im.z, 1, 720000) && int(im.w, 1, 8192) && int(im.h, 1, 8192) &&
       im.n === Math.ceil(im.z / CHUNK)) m.im = { n: im.n, z: im.z, w: im.w, h: im.h };
+    else if (vn && typeof vn === 'object' && int(vn.n, 1, 80) && int(vn.z, 1, 720000) && int(vn.d, 1, 600) && int(vn.t, 0, VN_TYPES.length - 1) &&
+      vn.n === Math.ceil(vn.z / CHUNK)) m.vn = { n: vn.n, z: vn.z, d: vn.d, t: vn.t };
     else if (lc === 1) m.lc = 1;                                         // a request for the place
     else if (lc !== undefined && okLoc(lc)) m.lc = okLoc(lc);            // a place
     return m;
@@ -777,6 +806,7 @@ header h1{font-size:20px;margin:0}
     m.lastSent = Date.now();
     var o = { t: 'm', id: m.id, ts: m.ts, n: m.name, x: m.text };
     if (m.im) o.im = m.im;
+    if (m.vn) o.vn = m.vn;
     if (m.lc) o.lc = m.lc;
     if (known) o.g = gen;       // before we know the room generation we say nothing: it counts as current
     return publish(o).then(function (n) {
@@ -850,10 +880,10 @@ header h1{font-size:20px;margin:0}
     if (o.t === 'm') {
       if (log.has(o.id)) { ack([o.id]); return; }
       // Put their send time on our clock, so both phones agree on the order. Never later than now.
-      var m = clean(o.id, Math.min(Date.now(), (+o.ts || o.at) + clockOff.get(o.s)), o.n, o.x, o.im, o.lc);
+      var m = clean(o.id, Math.min(Date.now(), (+o.ts || o.at) + clockOff.get(o.s)), o.n, o.x, o.im, o.lc, o.vn);
       if (!m) return;
       m.mine = false; m.state = 'seen';
-      if (m.im && !pics.has(m.id)) pics.set(m.id, { parts: new Array(m.im.n), got: 0, t: Date.now() });   // the pieces follow
+      if (md(m) && !pics.has(m.id)) pics.set(m.id, { parts: new Array(md(m).n), got: 0, t: Date.now() });   // the pieces follow
       add(m); render(m); ack([m.id]);
       $('#typing').hidden = true; clearTimeout(typingTimer);
     } else if (o.t === 'a') {
@@ -895,6 +925,7 @@ header h1{font-size:20px;margin:0}
       if (m.state === 'seen' || m.state === 'opened' || items.length >= 30) return;
       var it = { id: m.id, ts: m.ts, x: m.text };
       if (m.im) it.im = m.im;
+      if (m.vn) it.vn = m.vn;
       if (m.lc) it.lc = m.lc;
       var len = enc.encode(JSON.stringify(it)).length;
       if (size + len > 13000) return;                    // the box is one packet: 16384 bytes at most
@@ -944,7 +975,7 @@ header h1{font-size:20px;margin:0}
     // Their clock against ours. Not known yet when they are away: then the time is set right when they come in.
     var fresh = [], off = clockOff.get(o.s);
     (Array.isArray(o.m) ? o.m : []).slice(0, 40).forEach(function (e) {
-      var m = e && typeof e.ts === 'number' && !log.has(e.id) ? clean(e.id, Math.min(Date.now(), e.ts + (off || 0)), o.n, e.x, e.im, e.lc) : null;
+      var m = e && typeof e.ts === 'number' && !log.has(e.id) ? clean(e.id, Math.min(Date.now(), e.ts + (off || 0)), o.n, e.x, e.im, e.lc, e.vn) : null;
       if (!m) return;
       m.mine = false; m.state = 'seen';
       if (off === undefined) m.bs = o.s;
@@ -1034,12 +1065,12 @@ header h1{font-size:20px;margin:0}
       }).then(function (ok) { if (!ok) cant(); });
     });
   }
-  function msgRec(m) { return { k: 'm', g: gen, id: m.id, ts: m.ts, n: m.name, x: m.text, im: m.im, lc: m.lc, w: m.mine ? 1 : 0, u: m.u ? 1 : 0, d: m.state === 'opened' ? 2 : m.state === 'seen' ? 1 : 0 }; }
+  function msgRec(m) { return { k: 'm', g: gen, id: m.id, ts: m.ts, n: m.name, x: m.text, im: m.im, vn: m.vn, lc: m.lc, w: m.mine ? 1 : 0, u: m.u ? 1 : 0, d: m.state === 'opened' ? 2 : m.state === 'seen' ? 1 : 0 }; }
   function picRec(id) { return { k: 'i', g: gen, id: id, d: b64(pics.get(id).bytes) }; }
   // The records of these messages, and of their photos.
   function recsFor(list) {
     var r = list.map(msgRec);
-    list.forEach(function (m) { var p = m.im && pics.get(m.id); if (p && p.bytes) r.push(picRec(m.id)); });
+    list.forEach(function (m) { var p = md(m) && pics.get(m.id); if (p && p.bytes) r.push(picRec(m.id)); });
     return r;
   }
   function persist(rec) { dirty.push(rec); if (!saveTimer) saveTimer = setTimeout(flush, 250); }
@@ -1082,7 +1113,7 @@ header h1{font-size:20px;margin:0}
         if (typeof o.id === 'string' && typeof o.d === 'string' && o.d.length < 1e6) { try { setPic(o.id, unb64(o.d), true); } catch (e) {} }
         return;
       }
-      var m = o.k === 'm' && o.g === gen ? clean(o.id, o.ts, o.n, o.x, o.im, o.lc) : null;
+      var m = o.k === 'm' && o.g === gen ? clean(o.id, o.ts, o.n, o.x, o.im, o.lc, o.vn) : null;
       if (!m) return;
       var r = o.w !== 1 ? 0 : o.d === 2 ? 3 : o.d === 1 ? 2 : 1, had = log.get(m.id);   // 0 theirs, 1 mine, 2 mine and delivered, 3 mine and opened
       if (had) {
@@ -1097,6 +1128,8 @@ header h1{font-size:20px;margin:0}
       if (m.ts > lastTs) lastTs = m.ts;                          // what we write next goes below everything saved
       from.set(m.id, rows[i].k); log.set(m.id, m); fresh.push(m);
     });
+    // The sound of a voice note may have been read before its message: it was then made a picture. Undo that.
+    fresh.forEach(function (m) { var p = m.vn && pics.get(m.id); if (p && p.url && p.url !== 'voice') { URL.revokeObjectURL(p.url); p.url = 'voice'; } });
     renderMany(fresh);
     if (note) adoptNote(note);
     if (old.length) job(function () { return tx(function (st) { old.forEach(function (k) { st.delete(k); }); }); });
@@ -1109,7 +1142,8 @@ header h1{font-size:20px;margin:0}
     log.clear(); els.clear();
     var kept = new Map();
     keep.forEach(function (m) { var p = pics.get(m.id); if (p) kept.set(m.id, p); });
-    pics.forEach(function (p, id) { if (p.url && !kept.has(id)) URL.revokeObjectURL(p.url); });
+    stopPlay();
+    pics.forEach(function (p, id) { if (kept.has(id)) return; if (p.url) URL.revokeObjectURL(p.url); if (p.aurl) URL.revokeObjectURL(p.aurl); });
     pics = kept; $('#viewer').hidden = true;
     var box = $('#messages');
     box.querySelectorAll('.msg').forEach(function (e) { e.remove(); });
@@ -1190,7 +1224,7 @@ header h1{font-size:20px;margin:0}
     while (pend.length) {
       var m = log.get(pend[0]);
       if (!m) { pend.shift(); continue; }
-      var it = { id: m.id, ts: m.ts, n: m.name, x: m.text, im: m.im, lc: m.lc, w: m.mine ? 1 : 0 }, len = enc.encode(JSON.stringify(it)).length;
+      var it = { id: m.id, ts: m.ts, n: m.name, x: m.text, im: m.im, vn: m.vn, lc: m.lc, w: m.mine ? 1 : 0 }, len = enc.encode(JSON.stringify(it)).length;
       if (items.length && (size + len > 6500 || items.length >= 100)) break;
       pend.shift(); items.push(it); size += len;
     }
@@ -1200,7 +1234,7 @@ header h1{font-size:20px;margin:0}
     if (!Array.isArray(o.m)) return;
     var off = clockOff.get(o.s) || 0, fresh = [], mineName = me.name.trim().toLowerCase();
     o.m.slice(0, 100).forEach(function (e) {
-      var m = e && typeof e.ts === 'number' && !log.has(e.id) ? clean(e.id, Math.min(Date.now(), e.ts + off), e.n, e.x, e.im, e.lc) : null;
+      var m = e && typeof e.ts === 'number' && !log.has(e.id) ? clean(e.id, Math.min(Date.now(), e.ts + off), e.n, e.x, e.im, e.lc, e.vn) : null;
       if (!m) return;
       // "me" when the phone that passes it on did not write it, and it carries this person's name
       m.mine = !e.w && m.name.trim().toLowerCase() === mineName; m.state = 'seen';
@@ -1238,30 +1272,33 @@ header h1{font-size:20px;margin:0}
       i.src = p.url; b.appendChild(i); b.dataset.ready = '1';
     } else b.textContent = p && p.got ? 'Getting the photo... ' + p.got + ' of ' + m.im.n : 'The photo is on its way...';
   }
-  function repaint(id) { var e = els.get(id), m = log.get(id); if (e && m) fillPic(e.querySelector('.msg-pic'), m); }
+  function repaint(id) { var e = els.get(id), m = log.get(id); if (e && m) { if (m.vn) fillVoice(e.querySelector('.msg-vn'), m); else fillPic(e.querySelector('.msg-pic'), m); } }
+  // What travels in pieces: the photo, or the voice note.
+  function md(m) { return m.im || m.vn || null; }
   // The photo is whole. quiet = it comes from the saved copy, so do not save it again.
   function setPic(id, bytes, quiet) {
     var p = pics.get(id) || {};
     if (p.url) return;
     p.bytes = bytes; p.parts = null;
-    p.url = URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' }));   // always shown as a JPEG, whatever was sent
+    var vm = log.get(id);
+    p.url = vm && vm.vn ? 'voice' : URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' }));   // always shown as a JPEG, whatever was sent
     pics.set(id, p);
     if (!quiet) persist(picRec(id));
     repaint(id);
   }
   function onPiece(o) {
     var m = typeof o.id === 'string' && log.get(o.id);
-    if (!m || !m.im || typeof o.d !== 'string' || o.d.length > 12100 || !int(o.k, 0, m.im.n - 1)) return;
+    if (!m || !md(m) || typeof o.d !== 'string' || o.d.length > 12100 || !int(o.k, 0, md(m).n - 1)) return;
     var p = pics.get(m.id);
-    if (!p) { p = { parts: new Array(m.im.n), got: 0 }; pics.set(m.id, p); }
+    if (!p) { p = { parts: new Array(md(m).n), got: 0 }; pics.set(m.id, p); }
     if (p.url || p.parts[o.k]) return;
     var part; try { part = unb64(o.d); } catch (e) { return; }
     if (part.length > CHUNK) return;
     p.parts[o.k] = part; p.got++; p.t = Date.now();
-    if (p.got < m.im.n) { repaint(m.id); return; }
-    var all = new Uint8Array(m.im.z), off = 0, ok = true;
+    if (p.got < md(m).n) { repaint(m.id); return; }
+    var all = new Uint8Array(md(m).z), off = 0, ok = true;
     p.parts.forEach(function (x) { if (off + x.length > all.length) ok = false; else all.set(x, off); off += x.length; });
-    if (!ok || off !== m.im.z) { pics.delete(m.id); repaint(m.id); return; }   // the pieces do not add up: start again
+    if (!ok || off !== md(m).z) { pics.delete(m.id); repaint(m.id); return; }   // the pieces do not add up: start again
     setPic(m.id, all);
   }
   // Ask for the pieces of one photo we do not hold yet. One ask at a time.
@@ -1269,25 +1306,25 @@ header h1{font-size:20px;margin:0}
     if (!peerSeen || !readyCount()) return;
     var now = Date.now(), done = false;
     log.forEach(function (m) {
-      if (done || !m.im) return;
+      if (done || !md(m)) return;
       var p = pics.get(m.id);
       if (p && (p.url || now - (p.t || 0) < 4000 || now - (p.q || 0) < 6000)) return;
-      if (!p) { p = { parts: new Array(m.im.n), got: 0 }; pics.set(m.id, p); }
+      if (!p) { p = { parts: new Array(md(m).n), got: 0 }; pics.set(m.id, p); }
       var miss = [];
-      for (var k = 0; k < m.im.n && miss.length < 30; k++) if (!p.parts[k]) miss.push(k);
+      for (var k = 0; k < md(m).n && miss.length < 30; k++) if (!p.parts[k]) miss.push(k);
       p.q = now; done = true;
       publish({ t: 'q', g: gen, id: m.id, k: miss });
     });
   }
   function onAsk(o) {
     var m = typeof o.id === 'string' && log.get(o.id), p = m && pics.get(m.id);
-    if (m && m.im && p && p.bytes && Array.isArray(o.k)) pushPic(m, o.k.slice(0, 40));
+    if (m && md(m) && p && p.bytes && Array.isArray(o.k)) pushPic(m, o.k.slice(0, 40));
   }
   function pushPic(m, ks) {
     var p = pics.get(m.id), now = Date.now();
     ks.forEach(function (k) {
       var tag = m.id + ':' + k;
-      if (!int(k, 0, m.im.n - 1) || sentAt.get(tag) > now - 8000) return;
+      if (!int(k, 0, md(m).n - 1) || sentAt.get(tag) > now - 8000) return;
       sentAt.set(tag, now);
       outq.push({ t: 'i', g: gen, id: m.id, k: k, d: b64(p.bytes.subarray(k * CHUNK, (k + 1) * CHUNK)) });
     });
@@ -1331,8 +1368,7 @@ header h1{font-size:20px;margin:0}
       add(m); render(m); refreshStatus(); wroteOne(m);
       sendMsg(m).then(function () {
         if (!peerSeen) return;                             // nobody there: they ask for it when they come
-        var all = []; for (var k = 0; k < m.im.n; k++) all.push(k);
-        pushPic(m, all);
+        pushAll(m);
       });
     }).catch(function () {
       $('#pic-note').hidden = false; clearTimeout(picNoteT);
@@ -1340,6 +1376,151 @@ header h1{font-size:20px;margin:0}
     });
   }
   function endPick() { setTimeout(function () { picking = false; if (document.hidden) cover(); }, 800); }
+  function pushAll(m) { var all = []; for (var k = 0; k < md(m).n; k++) all.push(k); pushPic(m, all); }
+
+  /* ---------- voice notes: recorded with a tap, sent in pieces like a photo ---------- */
+  function fmtDur(s) { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+  function voiceBox(m) { var b = el('div', 'msg-vn'); fillVoice(b, m); return b; }
+  function fillVoice(b, m) {
+    if (!b) return;
+    var p = pics.get(m.id), ready = !!(p && p.bytes);
+    if (ready && b.dataset.ready) return;
+    b.textContent = '';
+    var btn = el('button', 'vn-play'); btn.type = 'button'; btn.disabled = !ready;
+    btn.setAttribute('aria-label', 'Play the voice note');
+    b.appendChild(btn);
+    if (ready) {
+      var bar = el('div', 'vn-bar'); bar.appendChild(el('i'));
+      b.appendChild(bar); b.appendChild(el('span', 'vn-time', fmtDur(m.vn.d)));
+      b.dataset.ready = '1';
+    } else b.appendChild(el('span', 'vn-wait', p && p.got ? 'Getting the voice note... ' + p.got + ' of ' + m.vn.n : 'The voice note is on its way...'));
+  }
+  function vbox(id) { var e = id && els.get(id); return e ? e.querySelector('.msg-vn') : null; }
+  function showPlay() {
+    var b = vbox(playId), m = log.get(playId);
+    if (!b || !m || !m.vn || !b.dataset.ready) return;
+    var t = player.currentTime || 0;
+    b.querySelector('.vn-bar i').style.width = Math.min(100, t / m.vn.d * 100) + '%';
+    b.querySelector('.vn-time').textContent = fmtDur(t);
+  }
+  // Stop what plays, and show that voice note at its start again.
+  function stopPlay() {
+    var id = playId; playId = '';
+    if (player) { try { player.pause(); } catch (e) {} }
+    var b = vbox(id), m = log.get(id);
+    if (!b || !m || !b.dataset.ready) return;
+    b.removeAttribute('data-on'); b.querySelector('.vn-play').setAttribute('aria-label', 'Play the voice note');
+    b.querySelector('.vn-bar i').style.width = '0';
+    b.querySelector('.vn-time').textContent = fmtDur(m.vn.d);
+  }
+  function onState(on) {
+    var b = vbox(playId); if (!b || !b.dataset.ready) return;
+    if (on) b.dataset.on = '1'; else b.removeAttribute('data-on');
+    b.querySelector('.vn-play').setAttribute('aria-label', on ? 'Pause the voice note' : 'Play the voice note');
+  }
+  function playVoice(id) {
+    var m = log.get(id), p = pics.get(id);
+    if (!m || !m.vn || !p || !p.bytes) return;
+    if (!player) {
+      player = new Audio(); player.preload = 'auto';
+      player.addEventListener('timeupdate', showPlay);
+      player.addEventListener('playing', function () { onState(true); });
+      player.addEventListener('pause', function () { onState(false); });
+      player.addEventListener('ended', stopPlay);
+      player.addEventListener('error', function () {
+        var b = vbox(playId); playId = '';
+        if (!b || !player.getAttribute('src')) return;
+        b.removeAttribute('data-ready'); b.removeAttribute('data-on'); b.textContent = '';
+        b.appendChild(el('span', 'vn-wait', 'This voice note cannot be played on this phone.'));
+      });
+    }
+    if (playId === id) { if (player.paused) go(); else player.pause(); return; }
+    stopPlay();
+    if (!p.aurl) p.aurl = URL.createObjectURL(new Blob([p.bytes], { type: VN_TYPES[m.vn.t] }));
+    playId = id; player.src = p.aurl;
+    go();
+    function go() { var q = player.play(); if (q && q.catch) q.catch(function () {}); }
+  }
+  function micNote() {
+    $('#mic-note').hidden = false; clearTimeout(micNoteT);
+    micNoteT = setTimeout(function () { $('#mic-note').hidden = true; }, 6000);
+  }
+  // The kind of sound this browser can record. MP4 first: every phone can play it.
+  function recType() {
+    var c = ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
+    for (var i = 0; i < c.length; i++) { try { if (MediaRecorder.isTypeSupported(c[i])) return c[i]; } catch (e) {} }
+    return '';
+  }
+  function micOff(r) { if (r.stream) r.stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) {} }); r.stream = null; }
+  function startRec() {
+    if (!joined || covering || rec) return;
+    if (!window.MediaRecorder || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { micNote(); return; }
+    var r = rec = { parts: [], size: 0, t0: 0, timer: 0, stream: null, mr: null, send: false };
+    stopPlay();
+    $('#mic').disabled = true;
+    picking = true; pickUntil = Date.now() + 60000;   // the browser asks "allow the microphone?" and may take the focus
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (s) {
+      endPick(); $('#mic').disabled = false;
+      r.stream = s;
+      if (rec !== r || !joined || covering) { micOff(r); return; }   // stopped while the browser was asking
+      var type = recType(), opt = { audioBitsPerSecond: 32000 }, mr;
+      if (type) opt.mimeType = type;
+      try { mr = new MediaRecorder(s, opt); } catch (e) { try { mr = new MediaRecorder(s); } catch (e2) { mr = null; } }
+      if (!mr) { rec = null; micOff(r); micNote(); return; }
+      r.mr = mr;
+      mr.ondataavailable = function (ev) {
+        if (!ev.data || !ev.data.size) return;
+        r.parts.push(ev.data); r.size += ev.data.size;
+        if (rec === r && r.size > VN_BYTES) stopRec(true);    // as long as it may be: send what is there
+      };
+      // Stopped by the phone itself (a call took the microphone): send what was recorded.
+      mr.onstop = function () { micOff(r); if (r.send) doneRec(r); else if (rec === r) stopRec(true); };
+      mr.onerror = function () { if (rec === r) stopRec(false); micOff(r); micNote(); };
+      try { mr.start(1000); } catch (e) { rec = null; micOff(r); micNote(); return; }
+      r.t0 = Date.now();
+      $('#rec-time').textContent = '0:00';
+      $('#composer').dataset.rec = '1';
+      r.timer = setInterval(function () {
+        var t = (Date.now() - r.t0) / 1000;
+        $('#rec-time').textContent = fmtDur(t);
+        if (t >= VN_MAX) stopRec(true);
+      }, 250);
+      try { $('#rec-send').focus(); } catch (e) {}
+    }, function () {
+      endPick(); $('#mic').disabled = false;
+      if (rec === r) rec = null;
+      micNote();
+    });
+  }
+  // send = false: thrown away, nothing is kept.
+  function stopRec(send) {
+    var r = rec; if (!r) return;
+    rec = null;
+    clearInterval(r.timer);
+    $('#composer').removeAttribute('data-rec');
+    r.secs = r.t0 ? (Date.now() - r.t0) / 1000 : 0;
+    r.send = !!send && r.secs >= 0.5;
+    if (!r.send) r.parts = [];
+    if (r.mr && r.mr.state !== 'inactive') { try { r.mr.stop(); return; } catch (e) {} }
+    micOff(r);
+    if (r.send) doneRec(r);
+  }
+  function doneRec(r) {
+    var mime = (r.mr && r.mr.mimeType) || (r.parts[0] && r.parts[0].type) || '';
+    var blob = new Blob(r.parts, { type: mime }); r.parts = [];
+    blob.arrayBuffer().then(function (ab) {
+      var bytes = new Uint8Array(ab);
+      if (!joined || covering) return;
+      if (bytes.length < 100 || bytes.length > 80 * CHUNK) { micNote(); return; }
+      lastTs = Math.max(Date.now(), lastTs + 1);
+      var m = { id: rid(14), ts: lastTs, name: me.name, text: 'Voice note',
+        vn: { n: Math.ceil(bytes.length / CHUNK), z: bytes.length, d: Math.max(1, Math.min(VN_MAX, Math.round(r.secs))),
+          t: /^audio\/mp4/.test(mime) ? 1 : /^audio\/ogg/.test(mime) ? 2 : 0 },
+        mine: true, state: 'sending', lastSent: 0, u: !known };
+      add(m); setPic(m.id, bytes); render(m); refreshStatus(); wroteOne(m);
+      sendMsg(m).then(function () { if (peerSeen) pushAll(m); });   // nobody there: they ask for it when they come
+    }, micNote);
+  }
 
   /* ---------- location: asked for, and shared only with a tap ---------- */
   function locBox(m) {
@@ -1529,6 +1710,7 @@ header h1{font-size:20px;margin:0}
   }
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden) { wake(); return; }
+    stopRec(false); stopPlay();
     flush(); if (coverOn()) cover(); else away();
   });
   // Another window or app took the focus (the page may still be in view).
@@ -1725,6 +1907,13 @@ header h1{font-size:20px;margin:0}
   $('#attach').addEventListener('click', function () { picking = true; pickUntil = Date.now() + 120000; $('#file').click(); });
   $('#file').addEventListener('change', function () { var f = this.files && this.files[0]; this.value = ''; endPick(); if (f) sendPic(f); });
   $('#file').addEventListener('cancel', endPick);
+  $('#mic').addEventListener('click', startRec);
+  $('#rec-cancel').addEventListener('click', function () { stopRec(false); });
+  $('#rec-send').addEventListener('click', function () { stopRec(true); });
+  $('#messages').addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.vn-play') : null, m = b && b.closest('.msg');
+    if (m && !b.disabled) playVoice(m.dataset.id);
+  });
   $('#text').addEventListener('paste', function (e) {
     var f = e.clipboardData && e.clipboardData.files;
     if (f && f.length && /^image\//.test(f[0].type)) { e.preventDefault(); sendPic(f[0]); }

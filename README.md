@@ -30,6 +30,7 @@ If the other person is in but you cannot see each other, one of the passwords is
 - **Chat lines, not bubbles.** Each message is a line with a coloured bar and the name of who wrote it, grouped under the day.
 - **Catches up.** If one phone missed messages, the two phones compare what they hold and send only what is missing.
 - **Photos.** Tap the picture button, or paste a picture into the message box. The photo is made smaller before it is sent, and what the camera wrote into the file (such as the place it was taken) is removed. Photos are saved with the chat. Tap one to see it large and to save it to your device.
+- **Voice notes.** Tap the microphone button next to the picture button. The phone asks once to use the microphone. While it records, tap the cross to throw it away or the arrow to send it. A voice note is 2 minutes at most. Switching to another app or tab while recording throws the recording away. Like a photo, it arrives once you are both in the room, and it is saved with the chat.
 - **Delete chat.** Removes the chat and its photos for both people. This cannot be undone.
 - **Typing and presence.** The first letter of the other person's name pops up at the bottom while they are in the chat, with moving dots while they type.
 - **Notifications on your phone (you choose).** Tap **Notifications** in the chat and follow the steps. Your phone then tells you "New message" when the other person writes and you are not in the room. It needs the free app "ntfy". It is off until you turn it on, and you can turn it off again at any time.
@@ -50,7 +51,8 @@ Everything is in [`index.html`](index.html). There is no build step and no depen
 | Packets | 12 random bytes (nonce) + AES-GCM ciphertext, padded to 1024, 2048, 4096… bytes so the length of a message is hidden. |
 | Replay guard | A packet is dropped if it does not decrypt, if its nonce was seen before, or if its clock is more than 10 minutes off. The packets a relay keeps (the notification choices and the waiting messages) have no clock check; an old one cannot undo anything newer. |
 | Photos | Redrawn in the browser as a JPEG (1280 px at most), then sent encrypted in pieces of 9,000 bytes. A phone that misses pieces asks for them again. |
-| Storage | IndexedDB, one encrypted record per message and per photo. No key or password is ever stored. |
+| Voice notes | Recorded in the browser (MP4 or WebM sound, about 32 kbit/s), then sent encrypted in the same pieces as a photo. Played back only as sound. |
+| Storage | IndexedDB, one encrypted record per message and per photo or voice note. No key or password is ever stored. |
 | Waiting messages | Each person has one encrypted "box" that the relays keep: the messages nobody has received yet (30 at most, no photo bytes) and which messages that person holds. A page that opens the room alone reads the boxes. The time a box was sealed is the "last here" time. |
 | Location | A request and an answer are ordinary encrypted messages. The place (latitude, longitude, accuracy) is read once, after a tap, and saved with the chat like any message. |
 | Notifications | Only for people who turned them on. The writer's page sends [ntfy.sh](https://ntfy.sh) one small request: a code made from the password and the name, the fixed words "New message", and the address of the page. Never a name, never the text. The on/off choices travel encrypted; the relays keep one such packet so a phone learns them when it opens the room alone. |
@@ -77,6 +79,7 @@ The comment at the top of the script in `index.html` describes the packet types,
 - **A shared location is a message.** It stays in the chat until someone uses Delete chat. Opening the map leaves the page, which signs you out. The map service then sees the place you open.
 - **Clearing browser data deletes the saved chat** on that device.
 - **Photos are for the new page only.** A phone that still has the old page open shows the word "Photo" until it is reloaded.
+- **Voice notes are for the new page only.** A phone that still has the old page open shows the words "Voice note" until it is reloaded. An older phone may not be able to play every kind of sound; the page then says so.
 - **A saved or screenshotted photo is out of the room.** Delete chat cannot reach a copy the other person has saved.
 - **Notifications use an outside service.** ntfy.sh cannot read the chat, but it can see that a message was written, and when. The notification code belongs to your name, so type the same name every time. Opening the ntfy app takes you away from the page, which signs you out: turn notifications on first.
 - **Stay signed in keeps the keys on the phone.** They are stored as locked browser keys that cannot be read out as text, and the password is never stored. But anyone who holds the unlocked phone can open the chat. Turn it on only on a phone that is yours alone.
