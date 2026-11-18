@@ -38,7 +38,7 @@ If the other person is in but you cannot see each other, one of the passwords is
 - **Settings for this phone only.** Tap the gear at the top of the chat. Both switches change only the phone you tap them on.
   - **Stay signed in** (off at first). When it is on, this phone opens the chat without the password. **Leave** still signs out.
   - **Cover page** (on at first). When it is off, no cover page shows and the chat stays open when you look away.
-- **Verse of the day.** A Bible verse shows at the top of the chat, with a few words on what it means. It is open the first time each day, then a small bar. Tap it to open or fold it. For now it is Psalm 34:6-8 (King James Version).
+- **Verse of the day.** A Bible verse shows at the top of the chat, with a few words on what it means. It is open the first time each day, then a small bar. Tap it to open or fold it. For now it is Genesis 29:20 (New International Version).
 
 ## How it works
 
