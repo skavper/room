@@ -38,7 +38,8 @@ If the other person is in but you cannot see each other, one of the passwords is
 - **Settings for this phone only.** Tap the gear at the top of the chat. Both switches change only the phone you tap them on.
   - **Stay signed in** (off at first). When it is on, this phone opens the chat without the password. **Leave** still signs out.
   - **Cover page** (on at first). When it is off, no cover page shows and the chat stays open when you look away.
-- **Verse of the day.** A Bible verse shows at the top of the chat, with a few words on what it means. It is open the first time each day, then a small bar. Tap it to open or fold it. For now it is Genesis 29:20 (New International Version).
+- **Verse of the day.** Today's Bible verse (New International Version) shows at the top of the chat. It comes from OurManna (beta.ourmanna.com): the page asks once a day, for today's verse only, and sends nothing about the chat. The answer is kept on the phone. If the service is slow or not there, the last verse shows, or Genesis 29:20. It is open the first time each day, then a small bar. Tap it to open or fold it. When the verse is open, "Read the chapter" opens the reader there.
+- **Bible.** The Bible button opens a reader (World English Bible, public domain). Pick a book, then a chapter, or step with the next and previous buttons. Tap a verse (tap two to choose a few) to bookmark it, highlight it, add a note or send it to the chat. Every bookmark, highlight and note shows who made it, and each person can change or delete only their own. The list of notes opens each one in its place. They reach the other phone even when you are never in the room together, are saved on the phone, and stay when the chat is deleted. A book is loaded from this page's own address only when it is opened. **Read together** (a switch in the reader): while both of you have it on, when one opens a chapter the other phone opens it too ("Following ..."). Nothing about the reading is kept.
 
 ## How it works
 
@@ -61,7 +62,7 @@ The comment at the top of the script in `index.html` describes the packet types,
 
 ## Safety
 
-- **Nothing from outside.** A content security policy lets the page load no outside script, style or picture, and lets it talk only to the three relays and, for notifications, ntfy.sh. Nothing is sent to ntfy.sh unless someone in the room turned notifications on or asked for a test.
+- **Nothing from outside.** A content security policy lets the page load no outside script, style or picture, and lets it talk only to this page's own address (the Bible), the three relays, beta.ourmanna.com (the verse of the day) and, for notifications, ntfy.sh. Nothing is sent to ntfy.sh unless someone in the room turned notifications on or asked for a test.
 - **No framing.** The page refuses to run inside another website.
 - **Short passwords need a second tap.** A password under 12 characters shows a warning first.
 - **Hides when you look away,** and also after 10 minutes without a touch.

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="robots" content="noindex">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; media-src blob:; connect-src wss://broker.hivemq.com:8884 wss://broker.emqx.io:8084 wss://test.mosquitto.org:8081 https://ntfy.sh; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; media-src blob:; connect-src 'self' wss://broker.hivemq.com:8884 wss://broker.emqx.io:8084 wss://test.mosquitto.org:8081 https://ntfy.sh https://beta.ourmanna.com; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="color-scheme" content="light dark">
 <title>Room</title>
 <link id="icon" rel="icon" href="data:,">
@@ -110,6 +110,49 @@ header h1{font-size:20px;margin:0}
 #verse .v-mean{margin-top:8px;color:var(--soft)}
 #verse:not([aria-expanded=true]) .v-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #verse:not([aria-expanded=true]) .v-mean{display:none}
+#verse-read{flex:none;margin:6px 12px 0;padding:8px 14px;font-size:14px}
+#bib{padding:4px 9px;font-size:14px}
+#bible{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;background:var(--panel)}
+.bb-top{flex:none;display:flex;align-items:center;gap:8px;padding:10px 12px;padding-top:max(10px,env(safe-area-inset-top));border-bottom:1px solid var(--line);background:var(--card)}
+.bb-top button{padding:8px 12px;font-size:15px}
+#bb-pick{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px}
+.bb-rt{flex:none;display:flex;align-items:center;gap:10px;padding:6px 12px;border-bottom:1px solid var(--line);background:var(--card);font-size:13px}
+.bb-rt button{padding:4px 10px;font-size:13px}
+#bb-follow{flex:1;min-width:0;color:var(--soft);font-weight:600}
+#bb-tog[aria-pressed=true]{background:var(--me);color:var(--meink);border-color:var(--me)}
+#bb-body{flex:1;min-height:0;overflow-y:auto;padding:8px 16px 20px;font-size:18px;line-height:1.55}
+.bb-h{font-size:19px;margin:14px 0 8px}
+.bv{padding:3px 6px;margin:0 -6px;border-radius:8px;cursor:pointer}
+.bv .bn{font-size:11px;color:var(--soft);font-weight:700}
+.bv.hl-me{background:color-mix(in srgb,var(--me) 22%,transparent)}
+.bv.hl-you{background:color-mix(in srgb,var(--you) 22%,transparent)}
+.bv.on{outline:2px solid var(--me)}
+.bv.flash{animation:fade 1.4s}
+.bx{margin:4px 0 8px 12px;padding:8px 12px;border-left:3px solid var(--you);background:var(--card);border-radius:8px;font-size:15px;line-height:1.4}
+.bx.mine{border-left-color:var(--me)}
+.bx-h{display:flex;gap:8px;justify-content:space-between;font-size:12px;color:var(--soft);font-weight:650}
+.bx-x{margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.bx-r{margin-top:6px;display:flex;gap:8px}
+.bx-r button{padding:4px 10px;font-size:13px}
+.bb-grid{display:grid;gap:8px}
+.bb-grid.books{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+.bb-grid.chaps{grid-template-columns:repeat(auto-fill,minmax(54px,1fr))}
+.bb-grid button{padding:10px 6px;font-size:15px;background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.bb-msg{color:var(--soft)}
+.bb-item{display:block;width:100%;margin:0 0 8px;text-align:left;background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:400;font-size:15px}
+.bb-item span{display:block}
+.bi-ref{font-weight:700}
+.bi-by{font-size:12px;color:var(--soft)}
+.bi-x{margin-top:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+#bb-nav{flex:none;display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--line);background:var(--card)}
+#bb-nav button{flex:1;padding:10px}
+#bb-acts{flex:none;padding:8px 12px;border-top:1px solid var(--line);background:var(--card)}
+#bb-sel{font-weight:700;font-size:14px;margin-bottom:6px}
+#bb-acts .row{display:flex;flex-wrap:wrap;gap:6px}
+#bb-acts button{padding:8px 12px;font-size:14px}
+#bb-note{flex:none;padding:8px 12px;border-top:1px solid var(--line);background:var(--card)}
+#bb-note textarea{display:block;width:100%;min-height:80px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit;font-size:16px;resize:vertical}
+#bb-note .row{display:flex;gap:8px;margin-top:6px}
 #ping-code{margin-top:6px;font-family:ui-monospace,Consolas,monospace;font-size:14px}
 #ping-open{display:block;margin-top:6px}
 #empty{margin:auto;color:var(--soft);text-align:center;padding:0 12px}
@@ -186,10 +229,20 @@ header h1{font-size:20px;margin:0}
       <div id="peer" data-online="false"><span class="dot"></span><span id="peer-text">Waiting for the other person</span></div>
       <div id="last" hidden></div>
     </div>
+    <button id="bib" type="button" class="quiet">Bible</button>
     <button id="set" type="button" class="quiet" aria-label="Settings" aria-expanded="false">&#9881;&#65038;</button>
     <button id="leave" type="button" class="quiet">Leave</button>
   </header>
   <button id="verse" type="button" aria-expanded="false" hidden></button>
+  <button id="verse-read" type="button" class="quiet" hidden>Read the chapter</button>
+  <div id="bible" hidden>
+    <div class="bb-top"><button id="bb-close" type="button" class="quiet">Close</button><button id="bb-pick" type="button" class="quiet">Genesis 1</button><button id="bb-list" type="button" class="quiet">Notes</button></div>
+    <div class="bb-rt"><button id="bb-tog" type="button" class="quiet" aria-pressed="false">Read together: off</button><span id="bb-follow" aria-live="polite"></span></div>
+    <div id="bb-body"></div>
+    <div id="bb-acts" hidden><div id="bb-sel"></div><div class="row"><button id="bb-bm" type="button" class="quiet">Bookmark</button><button id="bb-hl" type="button" class="quiet">Highlight</button><button id="bb-nt" type="button" class="quiet">Add a note</button><button id="bb-say" type="button" class="quiet">Send to chat</button><button id="bb-clr" type="button" class="quiet">Clear</button></div></div>
+    <div id="bb-note" hidden><textarea id="bb-note-text" maxlength="600" aria-label="Your note"></textarea><div class="row"><button id="bb-note-save" type="button">Save note</button><button id="bb-note-cancel" type="button" class="quiet">Cancel</button></div></div>
+    <div id="bb-nav"><button id="bb-prev" type="button" class="quiet">Previous chapter</button><button id="bb-next" type="button" class="quiet">Next chapter</button></div>
+  </div>
   <div id="notice" class="note" hidden>No connection. Your messages will go out when it is back.</div>
   <div id="clock-note" class="note" hidden>The time on one phone looks wrong. Set the time to automatic on both phones.</div>
   <div id="save-note" class="note" hidden>Your chat cannot be saved on this phone. You can still chat.</div>
@@ -358,8 +411,25 @@ header h1{font-size:20px;margin:0}
   - Location: "Ask for location" writes a message with lc: 1. The other person sees a button. Only
     a tap on it reads the place (the browser asks for permission) and writes one message with
     lc: [lat, lon, metres]. Nothing is read or sent without that tap, and nothing is followed.
-  - Safety: a content security policy (no outside scripts; only the three relays and, for
-    notifications, ntfy.sh), no framing, a second tap before a short password is used, and the
+  - Bible: the World English Bible is read from bible/books.json and bible/<n>.json on this same
+    address (a book is fetched only when it is opened). Bookmarks, highlights and notes are one
+    notebook per person, a shared state: every item has an id, an author and an edit time (t); a
+    removal is a tombstone (d: 1, kept 120 days). Each phone publishes only its own items as packet
+    'n' (n: name, p: part, o: parts, i: items), sealed and padded like every packet, with the retain
+    flag, to topic + "/n/" + a code for the name (HMAC, bytes 64-95, 'room-nb-v1:') + "-" + part. A
+    part holds 11000 bytes of items at most, so a notebook is up to 8 parts (a smaller notebook
+    empties the old parts). It is sent again a moment after a change, when a relay connects and when
+    the page signs out. The other phone merges by id: the newest t wins, a removal wins a tie, and
+    only the author changes an item. 'n' has no generation: a chat delete leaves it alone. The merged
+    notebook is saved in its own IndexedDB ('b' + slot, one sealed record per item, AAD 'saved:nb:' +
+    id), apart from the chat's ('r' + slot) which a delete empties. Older pages never subscribe to
+    "/n/+" and drop 'n'. Read together: live packet 'r' (n, on, b, c, m: 1 when it opened a place,
+    q: 1 when the switch was just turned on), never kept. 'b' (leaving) forgets it.
+  - Verse of the day: one request a day per phone to https://beta.ourmanna.com (daily verse, text,
+    reference, version). Nothing about the chat is sent. The answer stays in localStorage; after a
+    failure or 5 seconds the last kept verse shows, else Genesis 29:20 (built in).
+  - Safety: a content security policy (no outside scripts; only this address, the three relays,
+    ntfy.sh for notifications and beta.ourmanna.com for the verse), no framing, a second tap before a short password is used, and the
     cover after 10 minutes without a touch.
   - Cover: when the page is hidden or the window loses focus while in a chat, the chat is swapped
     for a harmless-looking page (picked at random, with its own tab title and icon) and the page
@@ -555,25 +625,514 @@ header h1{font-size:20px;margin:0}
     $('#cover-note').textContent = cov ? 'It is on. When you look away, a cover page shows.' : 'It is off. No cover page shows.';
   }
 
-  /* ---------- verse of the day ---------- */
-  // One verse for each day, picked by the date. The list is part of the page: nothing is fetched.
-  var VERSES = [
-    { ref: 'Genesis 29:20',
-      text: 'So Jacob served seven years to get Rachel, but they seemed like only a few days to him because of his love for her.',
-      mean: 'Jacob worked for seven long years so he could marry Rachel. Because he loved her so much, the long wait felt short to him. Real love is patient, and it makes waiting worth it.' }
-  ];
-  function showVerse() {
-    var now = new Date(), day = Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
-    var v = VERSES[day % VERSES.length], box = $('#verse');
-    box.textContent = '';
-    box.appendChild(el('span', 'v-ref', 'Verse of the day \u00B7 ' + v.ref));
-    box.appendChild(el('span', 'v-text', v.text));
-    box.appendChild(el('span', 'v-mean', 'What it means: ' + v.mean));
-    // Open the first time each day, as a reminder. After that it is one line; a tap opens it.
-    box.setAttribute('aria-expanded', flag(VERSE_KEY) === String(day) ? 'false' : 'true');
-    setFlag(VERSE_KEY, String(day));
-    box.hidden = false;
+  /* ---------- Bible: the reader, and the notebook both people share ---------- */
+  var BOOKS = [["Genesis",50],
+    ["Exodus",40],
+    ["Leviticus",27],
+    ["Numbers",36],
+    ["Deuteronomy",34],
+    ["Joshua",24],
+    ["Judges",21],
+    ["Ruth",4],
+    ["1 Samuel",31],
+    ["2 Samuel",24],
+    ["1 Kings",22],
+    ["2 Kings",25],
+    ["1 Chronicles",29],
+    ["2 Chronicles",36],
+    ["Ezra",10],
+    ["Nehemiah",13],
+    ["Esther",10],
+    ["Job",42],
+    ["Psalms",150],
+    ["Proverbs",31],
+    ["Ecclesiastes",12],
+    ["Song of Solomon",8],
+    ["Isaiah",66],
+    ["Jeremiah",52],
+    ["Lamentations",5],
+    ["Ezekiel",48],
+    ["Daniel",12],
+    ["Hosea",14],
+    ["Joel",3],
+    ["Amos",9],
+    ["Obadiah",1],
+    ["Jonah",4],
+    ["Micah",7],
+    ["Nahum",3],
+    ["Habakkuk",3],
+    ["Zephaniah",3],
+    ["Haggai",2],
+    ["Zechariah",14],
+    ["Malachi",4],
+    ["Matthew",28],
+    ["Mark",16],
+    ["Luke",24],
+    ["John",21],
+    ["Acts",28],
+    ["Romans",16],
+    ["1 Corinthians",16],
+    ["2 Corinthians",13],
+    ["Galatians",6],
+    ["Ephesians",6],
+    ["Philippians",4],
+    ["Colossians",4],
+    ["1 Thessalonians",5],
+    ["2 Thessalonians",3],
+    ["1 Timothy",6],
+    ["2 Timothy",4],
+    ["Titus",3],
+    ["Philemon",1],
+    ["Hebrews",13],
+    ["James",5],
+    ["1 Peter",5],
+    ["2 Peter",3],
+    ["1 John",5],
+    ["2 John",1],
+    ["3 John",1],
+    ["Jude",1],
+    ["Revelation",22]];
+  var BB_KINDS = ['', 'Bookmark', 'Highlight', 'Note'];
+  var NB_TOMB = 120 * 86400000, NB_PACK = 11000, NB_MAX = 8, NOTE_MAX = 600;
+  var nb = new Map();                 // id -> {id, k: 1 bookmark 2 highlight 3 note, a: author, b: book, c: chapter, v, w: verses, x: note text, t: edited, d: 1 removed}
+  var nbDb = null, nbChain = null, nbId = '', nbT = 0, nbForce = false, nbTags = [];
+  var bbOpen = false, bbB = 0, bbC = 1, bbView = 'read', bbSel = null, bbCache = new Map(), bbJump = 0, bbEdit = '';
+  var bbRt = false, bbRtAt = 0, bbPeer = null;   // read together: this switch; when it went on; what the other phone said last
+
+  function bbRef(b, c, v, w) { return BOOKS[b][0] + ' ' + c + (v ? ':' + v + (w > v ? '-' + w : '') : ''); }
+  // "1 Peter 4:16" -> {b, c, v}, or null when it is no place in this Bible.
+  function bbFind(ref) {
+    var m = /^\s*((?:[1-3]\s*)?[A-Za-z][A-Za-z. ]*?)\s*(\d{1,3})(?::(\d{1,3}))?/.exec(String(ref));
+    if (!m) return null;
+    var nm = m[1].toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+    if (nm === 'psalm') nm = 'psalms';
+    if (nm === 'song of songs' || nm === 'song of solomon') nm = 'song of solomon';
+    for (var i = 0; i < BOOKS.length; i++) {
+      if (BOOKS[i][0].toLowerCase() === nm) {
+        var c = +m[2];
+        return c >= 1 && c <= BOOKS[i][1] ? { b: i, c: c, v: m[3] ? +m[3] : 0 } : null;
+      }
+    }
+    return null;
   }
+  // A book is fetched from this same address only when it is opened (World English Bible, public domain).
+  function bbLoad(i) {
+    if (bbCache.has(i)) return Promise.resolve(bbCache.get(i));
+    return fetch('bible/' + (i + 1) + '.json').then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); }).then(function (j) {
+      if (!j || !Array.isArray(j.c)) throw new Error('shape');
+      bbCache.set(i, j.c); return j.c;
+    });
+  }
+
+  /* the notebook: every phone writes its own items; the other phone merges them by id (the newest edit wins) */
+  function nbOk(e) {
+    if (!e || typeof e !== 'object' || typeof e.id !== 'string' || !/^[0-9a-z]{6,20}$/.test(e.id)) return false;
+    if (!int(e.k, 1, 3) || typeof e.a !== 'string' || !e.a || e.a.length > 30 || !int(e.t, 1, 1e13)) return false;
+    if (e.d === 1) return true;
+    return int(e.b, 0, 65) && int(e.c, 1, BOOKS[e.b][1]) && int(e.v, 1, 176) && int(e.w, e.v, 176) &&
+      (e.k === 3 ? typeof e.x === 'string' && e.x.length <= NOTE_MAX : e.x === undefined);
+  }
+  function nbMine(it) { return norm(it.a) === myName; }
+  // Take in one item. True when it is newer than what we hold.
+  function nbTake(e) {
+    var cur = nb.get(e.id);
+    if (cur && (cur.t > e.t || (cur.t === e.t && (cur.d || 0) >= (e.d || 0)))) return false;
+    var c = { id: e.id, k: e.k, a: e.a, t: e.t };
+    if (e.d === 1) c.d = 1; else { c.b = e.b; c.c = e.c; c.v = e.v; c.w = e.w; if (e.k === 3) c.x = e.x; }
+    nb.set(c.id, c); return true;
+  }
+  // The notebook has its own saved database (next to the saved chat, never inside it): a delete of the chat does not touch it.
+  function nbJob(fn) { if (nbChain) nbChain = nbChain.then(fn).catch(cant); }
+  function nbOpen() {
+    nbChain = new Promise(function (res) {
+      var over = false, t = 0;
+      var done = function (d) { if (over) { if (d) d.close(); return; } over = true; clearTimeout(t); nbDb = d; res(); };
+      t = setTimeout(function () { done(null); }, 6000);
+      try {
+        var q = indexedDB.open('b' + slot, 1);
+        q.onupgradeneeded = function () { q.result.createObjectStore('r'); };
+        q.onsuccess = function () { done(q.result); };
+        q.onerror = function () { done(null); };
+      } catch (e) { done(null); }
+    });
+  }
+  function nbWrite(it) {
+    nbJob(function () {
+      if (!nbDb) return;
+      return lock(it, 'nb:' + it.id).then(function (v) {
+        return new Promise(function (res) {
+          try { var t = nbDb.transaction('r', 'readwrite'); t.objectStore('r').put(v, it.id); t.oncomplete = function () { res(); }; t.onerror = t.onabort = function () { cant(); res(); }; }
+          catch (e) { cant(); res(); }
+        });
+      });
+    });
+  }
+  function nbLoad() {
+    nbJob(function () {
+      if (!nbDb) return;
+      return new Promise(function (res) {
+        var rows = [];
+        try {
+          var q = nbDb.transaction('r').objectStore('r').openCursor();
+          q.onsuccess = function () { var c = q.result; if (c) { rows.push({ k: String(c.key), v: c.value }); c.continue(); } else res(rows); };
+          q.onerror = function () { res(rows); };
+        } catch (e) { res(rows); }
+      }).then(function (rows) {
+        return Promise.all(rows.map(function (r) { return unlock(r.v, 'nb:' + r.k); })).then(function (objs) {
+          var old = Date.now() - NB_TOMB, drop = [], changed = false;
+          objs.forEach(function (o, i) {
+            if (!nbOk(o) || o.id !== rows[i].k) { drop.push(rows[i].k); return; }
+            if (o.d === 1 && o.t < old) { drop.push(rows[i].k); return; }   // a removal that every phone has had time to see
+            if (nbTake(o)) changed = true;
+          });
+          if (drop.length && nbDb) { try { var t = nbDb.transaction('r', 'readwrite'); drop.forEach(function (k) { t.objectStore('r').delete(k); }); } catch (e) {} }
+          if (changed) { bbDraw(); nbSoon(1500); }
+        });
+      });
+    });
+  }
+  // My items, as packets of 11000 bytes at most (a packet is 16384 at most). Oldest edit first, so new work lands in the last packet.
+  function nbPack() {
+    var mine = [], old = Date.now() - NB_TOMB;
+    nb.forEach(function (it) { if (nbMine(it) && !(it.d && it.t < old)) mine.push(it); });
+    mine.sort(function (a, b) { return a.t - b.t || (a.id < b.id ? -1 : 1); });
+    var out = [[]], size = 0;
+    mine.forEach(function (it) {
+      var n = enc.encode(JSON.stringify(it)).length + 1;
+      if (size + n > NB_PACK && out[out.length - 1].length) { out.push([]); size = 0; }
+      out[out.length - 1].push(it); size += n;
+    });
+    return out[0].length ? out : [];
+  }
+  function nbSoon(ms, force) { if (force) nbForce = true; if (!nbT) nbT = setTimeout(nbSend, ms || 500); }
+  // Put my notebook on the relays: sealed, padded, kept, on my own topic. Only the packets that changed, unless a relay just connected.
+  function nbSend() {
+    clearTimeout(nbT); nbT = 0;
+    if (!joined || !nbId || !readyCount()) return;
+    var force = nbForce, parts = nbPack(); nbForce = false;
+    parts.forEach(function (list, k) {
+      var tag = JSON.stringify(list);
+      if (!force && nbTags[k] === tag) return;
+      nbTags[k] = tag;
+      publish({ t: 'n', n: me.name, p: k, o: parts.length, i: list }, '/n/' + nbId + '-' + k);
+    });
+    for (var k = parts.length; k < (force ? NB_MAX : nbTags.length); k++) {      // the notebook got smaller (or, after a reload, may have): the relays forget the packets that are not needed
+      var f = packet(0x31, [str(topic + '/n/' + nbId + '-' + k)]);
+      relays.forEach(function (r) { if (r.ready && r.ws && r.ws.readyState === 1) { try { r.ws.send(f); } catch (e) { r.drop(true); } } });
+    }
+    nbTags.length = parts.length;
+  }
+  // A notebook packet (kept by a relay, or fresh). It may be old: the newest edit of each item wins.
+  function onBook(o) {
+    if (!Array.isArray(o.i) || o.i.length > 500) return;
+    var changed = [];
+    o.i.forEach(function (e) { if (nbOk(e) && nbTake(e)) changed.push(nb.get(e.id)); });
+    if (!changed.length) return;
+    changed.forEach(nbWrite);
+    bbDraw();
+    if (changed.some(nbMine)) nbSoon(1000);       // a phone of mine, with an older copy, is catching up
+  }
+  // My own change: a new item, an edit, or a removal (the same id with d: 1).
+  function nbPut(it) {
+    var prev = nb.get(it.id);
+    it.t = Math.max(Date.now(), prev ? prev.t + 1 : 0);
+    nb.set(it.id, it); nbWrite(it); nbSoon(400); bbDraw();
+  }
+  function nbGone(it) { return { id: it.id, k: it.k, a: it.a, t: 0, d: 1 }; }
+
+  /* the reader */
+  function bbShow(b, c, verse, fromPeer) {
+    bbB = b; bbC = c; bbView = 'read'; bbSel = null; bbJump = verse || 0; bbEdit = '';
+    $('#bb-note').hidden = true;
+    bbDraw();
+    if (bbRt && !fromPeer) bbSay(1);
+  }
+  function bbOpenAt(b, c, verse) {
+    bbOpen = true; $('#bible').hidden = false;
+    bbShow(b, c, verse);
+  }
+  function bbShut() {
+    bbOpen = false; $('#bible').hidden = true; bbSel = null;
+    if (bbRt) { bbRt = false; bbSay(0); bbLine(); }
+  }
+  function bbStep(d) {
+    var b = bbB, c = bbC + d;
+    if (c < 1) { if (b === 0) return; b--; c = BOOKS[b][1]; }
+    else if (c > BOOKS[b][1]) { if (b === 65) return; b++; c = 1; }
+    bbShow(b, c);
+  }
+  function bbDraw() {
+    if (!bbOpen) return;
+    var body = $('#bb-body'), top = body.scrollTop;
+    var read = bbView === 'read';
+    $('#bb-nav').hidden = !read;
+    $('#bb-prev').disabled = bbB === 0 && bbC === 1;
+    $('#bb-next').disabled = bbB === 65 && bbC === BOOKS[65][1];
+    if (bbView === 'books') bbBooks(body);
+    else if (bbView === 'chapters') bbChapters(body);
+    else if (bbView === 'list') bbList(body);
+    else bbChapter(body);
+    if (read) body.scrollTop = top;
+    bbActs(); bbLine();
+  }
+  function bbGrid(body, title, list, cls, attr) {
+    var g = el('div', 'bb-grid ' + cls);
+    list.forEach(function (e) { var b = el('button', '', e[0]); b.type = 'button'; b.setAttribute(attr, e[1]); g.appendChild(b); });
+    if (title) body.appendChild(el('h2', 'bb-h', title));
+    body.appendChild(g);
+  }
+  function bbBooks(body) {
+    body.textContent = ''; $('#bb-pick').textContent = 'Choose a book';
+    var all = BOOKS.map(function (e, i) { return [e[0], String(i)]; });
+    bbGrid(body, 'Old Testament', all.slice(0, 39), 'books', 'data-b');
+    bbGrid(body, 'New Testament', all.slice(39), 'books', 'data-b');
+  }
+  function bbChapters(body) {
+    body.textContent = ''; $('#bb-pick').textContent = BOOKS[bbB][0];
+    var l = []; for (var i = 1; i <= BOOKS[bbB][1]; i++) l.push([String(i), String(i)]);
+    bbGrid(body, BOOKS[bbB][0] + ': choose a chapter', l, 'chaps', 'data-c');
+  }
+  function bbList(body) {
+    body.textContent = ''; $('#bb-pick').textContent = 'Notes and bookmarks';
+    var all = [];
+    nb.forEach(function (it) { if (!it.d) all.push(it); });
+    all.sort(function (a, b) { return b.t - a.t; });
+    if (!all.length) { body.appendChild(el('p', 'bb-msg', 'Nothing here yet. Tap a verse to bookmark it, highlight it or add a note.')); return; }
+    all.forEach(function (it) {
+      var r = el('button', 'bb-item'); r.type = 'button'; r.setAttribute('data-id', it.id);
+      r.appendChild(el('span', 'bi-ref', bbRef(it.b, it.c, it.v, it.w)));
+      r.appendChild(el('span', 'bi-by', BB_KINDS[it.k] + ' · ' + it.a));
+      if (it.k === 3) r.appendChild(el('span', 'bi-x', it.x));
+      body.appendChild(r);
+    });
+  }
+  // One bookmark, highlight or note, shown under the last verse it covers. It says who made it.
+  function bbChip(it) {
+    var mine = nbMine(it), c = el('div', 'bx' + (mine ? ' mine' : ''));
+    c.setAttribute('data-id', it.id);
+    var h = el('div', 'bx-h');
+    h.appendChild(el('span', 'bx-k', BB_KINDS[it.k] + (it.w > it.v ? ' (verses ' + it.v + '-' + it.w + ')' : '')));
+    h.appendChild(el('span', 'bx-a', it.a));
+    c.appendChild(h);
+    if (it.k === 3) c.appendChild(el('div', 'bx-x', it.x));
+    if (mine) {
+      var r = el('div', 'bx-r'), b;
+      if (it.k === 3) { b = el('button', 'quiet', 'Edit'); b.type = 'button'; b.setAttribute('data-act', 'edit'); r.appendChild(b); }
+      b = el('button', 'quiet', it.k === 3 ? 'Delete' : 'Remove'); b.type = 'button'; b.setAttribute('data-act', 'del'); r.appendChild(b);
+      c.appendChild(r);
+    }
+    return c;
+  }
+  function bbChapter(body) {
+    var b = bbB, c = bbC, chs = bbCache.get(b);
+    $('#bb-pick').textContent = BOOKS[b][0] + ' ' + c;
+    if (!chs) {
+      body.textContent = ''; body.appendChild(el('p', 'bb-msg', 'Loading...'));
+      bbLoad(b).then(function () { if (bbOpen && bbView === 'read' && bbB === b) bbDraw(); }, function () {
+        if (!bbOpen || bbView !== 'read' || bbB !== b) return;
+        body.textContent = '';
+        body.appendChild(el('p', 'bb-msg', 'This book could not be loaded. Check the connection.'));
+        var rb = el('button', '', 'Try again'); rb.type = 'button'; rb.setAttribute('data-act', 'retry'); body.appendChild(rb);
+      });
+      return;
+    }
+    var vs = chs[c - 1], f = document.createDocumentFragment();
+    body.textContent = '';
+    if (!Array.isArray(vs)) { body.appendChild(el('p', 'bb-msg', 'This chapter is missing.')); return; }
+    f.appendChild(el('h2', 'bb-h', BOOKS[b][0] + ' ' + c));
+    var items = [];
+    nb.forEach(function (it) { if (!it.d && it.b === b && it.c === c) items.push(it); });
+    items.sort(function (x, y) { return x.t - y.t; });
+    var lo = bbSel ? Math.min(bbSel.a, bbSel.b) : 0, hi = bbSel ? Math.max(bbSel.a, bbSel.b) : 0;
+    vs.forEach(function (t, i) {
+      var n = i + 1;
+      if (typeof t !== 'string' || !t) return;
+      var d = el('div', 'bv');
+      d.setAttribute('data-v', String(n));
+      d.appendChild(el('sup', 'bn', String(n)));
+      d.appendChild(el('span', 'bt', ' ' + t));
+      items.forEach(function (it) { if (it.k === 2 && it.v <= n && n <= it.w) d.classList.add(nbMine(it) ? 'hl-me' : 'hl-you'); });
+      if (lo && n >= lo && n <= hi) d.classList.add('on');
+      f.appendChild(d);
+      items.forEach(function (it) { if (it.w === n) f.appendChild(bbChip(it)); });
+    });
+    body.appendChild(f);
+    if (bbJump) {
+      var j = body.querySelector('.bv[data-v="' + bbJump + '"]');
+      bbJump = 0;
+      if (j) { try { j.scrollIntoView({ block: 'center' }); } catch (e) {} j.classList.add('flash'); }
+    }
+  }
+  // The bar for the verses that are chosen.
+  function bbActs() {
+    var bar = $('#bb-acts'), ed = !$('#bb-note').hidden;
+    bar.hidden = !bbSel || ed || bbView !== 'read';
+    if (bar.hidden) return;
+    var v = Math.min(bbSel.a, bbSel.b), w = Math.max(bbSel.a, bbSel.b), has = { 1: false, 2: false };
+    nb.forEach(function (it) { if (!it.d && nbMine(it) && it.k < 3 && it.b === bbB && it.c === bbC && it.v === v && it.w === w) has[it.k] = true; });
+    $('#bb-sel').textContent = bbRef(bbB, bbC, v, w);
+    $('#bb-bm').textContent = has[1] ? 'Remove bookmark' : 'Bookmark';
+    $('#bb-hl').textContent = has[2] ? 'Remove highlight' : 'Highlight';
+  }
+  function bbSelText() {
+    var chs = bbCache.get(bbB), vs = chs && chs[bbC - 1], v = Math.min(bbSel.a, bbSel.b), w = Math.max(bbSel.a, bbSel.b), out = [];
+    if (!Array.isArray(vs)) return '';
+    for (var n = v; n <= w; n++) if (typeof vs[n - 1] === 'string' && vs[n - 1]) out.push(vs[n - 1]);
+    return out.join(' ');
+  }
+  function bbTap(n) {
+    if (!bbSel || bbSel.a !== bbSel.b) bbSel = { a: n, b: n };
+    else if (bbSel.a === n) bbSel = null;
+    else bbSel.b = n;
+    bbDraw();
+  }
+  function bbMark(kind) {
+    var v = Math.min(bbSel.a, bbSel.b), w = Math.max(bbSel.a, bbSel.b), mine = null;
+    nb.forEach(function (it) { if (!it.d && nbMine(it) && it.k === kind && it.b === bbB && it.c === bbC && it.v === v && it.w === w) mine = it; });
+    if (mine) nbPut(nbGone(mine)); else bbNew({ id: rid(10), k: kind, a: me.name, b: bbB, c: bbC, v: v, w: w, t: 0 });
+    bbSel = null; bbDraw();
+  }
+  function bbNew(it) {
+    nbPut(it);
+    if (nbPack().length > NB_MAX) { nbPut(nbGone(it)); $('#bb-sel').textContent = 'Your notebook is full. Remove something first.'; }
+  }
+  function bbSayText() {
+    var t = bbSelText(), v = Math.min(bbSel.a, bbSel.b), w = Math.max(bbSel.a, bbSel.b), box = $('#text');
+    var s = bbRef(bbB, bbC, v, w) + ' (World English Bible): “' + t + '”';
+    s = (box.value ? box.value + ' ' : '') + s;
+    box.value = s.length > 1990 ? s.slice(0, 1989) + '…' : s;
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    bbShut(); box.focus();
+  }
+  function bbEditor(it) {
+    bbEdit = it ? it.id : '';
+    $('#bb-note').hidden = false; $('#bb-note-text').value = it ? it.x : '';
+    bbActs(); $('#bb-note-text').focus();
+  }
+  // Read together: a short packet that no relay keeps. Both switches on: opening a chapter opens it on the other phone too.
+  function bbSay(moved, ask) { if (joined) publish({ t: 'r', n: me.name, on: bbRt ? 1 : 0, b: bbB, c: bbC, m: moved ? 1 : 0, q: ask ? 1 : 0 }); }
+  function bbOnRead(o) {
+    if (!int(o.b, 0, 65) || !int(o.c, 1, BOOKS[o.b][1])) return;
+    var was = !!(bbPeer && bbPeer.on);
+    bbPeer = { on: o.on === 1, n: typeof o.n === 'string' ? o.n.slice(0, 30) : '', b: o.b, c: o.c };
+    if (bbRt && bbOpen && bbPeer.on) {
+      // They turned it on after us (q): tell them where we are. If both turned it on at once, the smaller name leads.
+      if (o.q === 1 || (!was && o.m !== 1 && myName < norm(bbPeer.n))) bbSay(1);
+      if (o.m === 1 && (o.b !== bbB || o.c !== bbC || bbView !== 'read')) bbShow(o.b, o.c, 0, true);
+    }
+    bbLine();
+  }
+  function bbLine() {
+    var on = bbRt && bbOpen && bbPeer && bbPeer.on && peerSeen;
+    var t = on ? 'Following ' + (bbPeer.n || 'the other person') : bbRt ? 'Waiting for the other person to turn on Read together' : '';
+    var e = $('#bb-follow'), b = $('#bb-tog');
+    if (e.textContent !== t) e.textContent = t;
+    b.setAttribute('aria-pressed', bbRt ? 'true' : 'false');
+    b.textContent = bbRt ? 'Read together: on' : 'Read together: off';
+  }
+  $('#bib').addEventListener('click', function () { if (joined) bbOpenAt(bbB, bbC); });
+  $('#bb-close').addEventListener('click', bbShut);
+  $('#bb-pick').addEventListener('click', function () { bbView = bbView === 'books' ? 'read' : 'books'; bbSel = null; $('#bb-note').hidden = true; bbDraw(); });
+  $('#bb-list').addEventListener('click', function () { bbView = bbView === 'list' ? 'read' : 'list'; bbSel = null; $('#bb-note').hidden = true; bbDraw(); });
+  $('#bb-prev').addEventListener('click', function () { bbStep(-1); });
+  $('#bb-next').addEventListener('click', function () { bbStep(1); });
+  $('#bb-tog').addEventListener('click', function () {
+    bbRt = !bbRt; bbRtAt = Date.now();
+    bbSay(0, bbRt && bbPeer && bbPeer.on);
+    bbLine();
+  });
+  $('#bb-bm').addEventListener('click', function () { if (bbSel) bbMark(1); });
+  $('#bb-hl').addEventListener('click', function () { if (bbSel) bbMark(2); });
+  $('#bb-nt').addEventListener('click', function () { if (bbSel) bbEditor(null); });
+  $('#bb-say').addEventListener('click', function () { if (bbSel) bbSayText(); });
+  $('#bb-clr').addEventListener('click', function () { bbSel = null; bbDraw(); });
+  $('#bb-note-cancel').addEventListener('click', function () { $('#bb-note').hidden = true; bbEdit = ''; bbDraw(); });
+  $('#bb-note-save').addEventListener('click', function () {
+    var x = $('#bb-note-text').value.trim().slice(0, NOTE_MAX), cur = bbEdit && nb.get(bbEdit);
+    if (!x) return;
+    $('#bb-note').hidden = true;
+    if (cur && !cur.d && nbMine(cur)) nbPut({ id: cur.id, k: 3, a: cur.a, b: cur.b, c: cur.c, v: cur.v, w: cur.w, x: x, t: 0 });
+    else if (!cur && bbSel) bbNew({ id: rid(10), k: 3, a: me.name, b: bbB, c: bbC, v: Math.min(bbSel.a, bbSel.b), w: Math.max(bbSel.a, bbSel.b), x: x, t: 0 });
+    bbEdit = ''; bbSel = null; bbDraw();
+  });
+  $('#bb-body').addEventListener('click', function (e) {
+    var t = e.target, q = function (s) { return t.closest ? t.closest(s) : null; }, x;
+    if ((x = q('[data-b]'))) { bbB = +x.getAttribute('data-b'); bbView = 'chapters'; bbDraw(); $('#bb-body').scrollTop = 0; return; }
+    if ((x = q('[data-c]'))) { bbShow(bbB, +x.getAttribute('data-c')); return; }
+    if ((x = q('.bb-item'))) { var it = nb.get(x.getAttribute('data-id')); if (it && !it.d) bbShow(it.b, it.c, it.v); return; }
+    if ((x = q('[data-act]'))) {
+      var act = x.getAttribute('data-act'), c = q('.bx'), item = c && nb.get(c.getAttribute('data-id'));
+      if (act === 'retry') { bbDraw(); return; }
+      if (!item || item.d || !nbMine(item)) return;
+      if (act === 'edit') { bbSel = null; bbEditor(item); }
+      else if (item.k === 3 && x.getAttribute('data-sure') !== '1') { x.setAttribute('data-sure', '1'); x.textContent = 'Tap again to delete'; }
+      else nbPut(nbGone(item));
+      return;
+    }
+    if ((x = q('.bv'))) bbTap(+x.getAttribute('data-v'));
+  });
+
+  /* ---------- verse of the day: today's verse from OurManna, asked for at most once a day ---------- */
+  var VKEPT_KEY = 'room-verse-kept', VTRY_KEY = 'room-verse-try', VERSE_URL = 'https://beta.ourmanna.com/api/v1/get?format=json&order=daily';
+  var VERSE_FALLBACK = { ref: 'Genesis 29:20', ver: 'NIV',
+    text: 'So Jacob served seven years to get Rachel, but they seemed like only a few days to him because of his love for her.',
+    mean: 'Jacob worked for seven long years so he could marry Rachel. Because he loved her so much, the long wait felt short to him. Real love is patient, and it makes waiting worth it.' };
+  function verseDay() { var now = new Date(); return Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000); }
+  function verseKept() {
+    try {
+      var o = JSON.parse(flag(VKEPT_KEY));
+      if (o && typeof o.ref === 'string' && typeof o.text === 'string' && typeof o.ver === 'string' && int(o.day, 0, 1e7) && o.ref.length <= 60 && o.text.length <= 1200 && o.ver.length <= 12) return o;
+    } catch (e) {}
+    return null;
+  }
+  // The verse to show: the kept one of today, else one request (5 seconds at most), else the last kept one, else Genesis 29:20.
+  function verseGet(day) {
+    var kept = verseKept();
+    if (kept && kept.day === day) return Promise.resolve(kept);
+    if (flag(VTRY_KEY) === String(day) || typeof fetch !== 'function') return Promise.resolve(kept);   // asked today already
+    setFlag(VTRY_KEY, String(day));
+    return new Promise(function (res) {
+      var ctl = null, over = false, t = 0;
+      var end = function (v) { if (over) return; over = true; clearTimeout(t); if (!v && ctl) { try { ctl.abort(); } catch (e) {} } res(v || kept); };
+      try { ctl = typeof AbortController === 'function' ? new AbortController() : null; } catch (e) {}
+      t = setTimeout(function () { end(null); }, 5000);
+      fetch(VERSE_URL, { credentials: 'omit', referrerPolicy: 'no-referrer', signal: ctl ? ctl.signal : undefined }).then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); }).then(function (j) {
+        var d = j && j.verse && j.verse.details, v = null;
+        if (d && typeof d.text === 'string' && typeof d.reference === 'string' && d.text.trim() && d.text.length <= 1200 && d.reference.length <= 60) {
+          v = { ref: d.reference.trim(), text: d.text.trim(), ver: typeof d.version === 'string' && d.version.length <= 12 && d.version ? d.version : 'NIV', day: day };
+          setFlag(VKEPT_KEY, JSON.stringify(v));
+        }
+        end(v);
+      }).catch(function () { end(null); });
+    });
+  }
+  function showVerse() {
+    var day = verseDay();
+    verseGet(day).then(function (v) {
+      v = v || VERSE_FALLBACK;
+      var box = $('#verse');
+      box.textContent = '';
+      box.appendChild(el('span', 'v-ref', 'Verse of the day · ' + v.ref + ' · ' + v.ver));
+      box.appendChild(el('span', 'v-text', v.text));
+      if (v.mean) box.appendChild(el('span', 'v-mean', 'What it means: ' + v.mean));
+      box.setAttribute('data-ref', v.ref);
+      // Open the first time each day, as a reminder. After that it is one line; a tap opens it.
+      box.setAttribute('aria-expanded', flag(VERSE_KEY) === String(day) ? 'false' : 'true');
+      setFlag(VERSE_KEY, String(day));
+      box.hidden = false;
+      verseRead();
+    });
+  }
+  // "Read the chapter" shows while the verse is open and the place is in this Bible.
+  function verseRead() {
+    var box = $('#verse'), f = bbFind(box.getAttribute('data-ref') || '');
+    $('#verse-read').hidden = box.hidden || box.getAttribute('aria-expanded') !== 'true' || !f;
+  }
+  $('#verse-read').addEventListener('click', function () {
+    var f = bbFind($('#verse').getAttribute('data-ref') || '');
+    if (f) bbOpenAt(f.b, f.c, f.v);
+  });
+
 
   function seal(obj) {
     obj.v = 1; obj.s = me.sid; obj.at = Date.now();
@@ -658,7 +1217,7 @@ header h1{font-size:20px;margin:0}
       if (p[1] !== 0) { r.drop(); return; }
       // two topics in one request: the room, and the kept packet with the choices for notifications
       r.ws.send(packet(0x82, [new Uint8Array([0, 1]), str(topic), new Uint8Array([0]), str(topic + '/w'), new Uint8Array([0]),
-        str(topic + '/u/+'), new Uint8Array([0])]));   // and the kept boxes of waiting messages
+        str(topic + '/u/+'), new Uint8Array([0]), str(topic + '/n/+'), new Uint8Array([0])]));   // and the kept boxes of waiting messages, and the notebooks
     } else if (type === 9) {
       if (p[0] !== 0 || p[1] !== 1) return;          // the answer to a later ask (kept pieces): nothing to do
       if (p[2] === 0x80) { r.drop(); return; }
@@ -848,6 +1407,7 @@ header h1{font-size:20px;margin:0}
     beat(); resendUnseen(null); knocks(); tellSoon(2500);
     if (readyCount() === 1) rekeep();
     boxTag = ''; boxSoon(2000);          // this relay may hold an old box, or none
+    nbSoon(2000, true);                  // and an old notebook, or none
   }
 
   function onPacket(o) {
@@ -856,6 +1416,8 @@ header h1{font-size:20px;margin:0}
     if (o.t === 'w') { heard(o.w); return; }
     // A box that a relay kept: what one person wrote and nobody got yet. It may be old too.
     if (o.t === 'u') { onBox(o); return; }
+    // A notebook (Bible bookmarks, highlights, notes) that a relay kept, or just changed. Kept apart from the chat.
+    if (o.t === 'n') { onBook(o); return; }
     // A piece of a photo or voice note that a relay kept. It may be old; it only fills a message we already have.
     if (o.t === 'i' && o.f === 1) { onPiece(o); return; }
     var gap = Date.now() - o.at;
@@ -913,11 +1475,13 @@ header h1{font-size:20px;margin:0}
       onPiece(o);
     } else if (o.t === 'q') {
       onAsk(o);
+    } else if (o.t === 'r') {
+      bbOnRead(o);                                     // reading together: not kept, not a message
     } else if (o.t === 'y') {
       $('#typing').hidden = false; clearTimeout(typingTimer);
       typingTimer = setTimeout(function () { $('#typing').hidden = true; }, TYPING_TTL);
     } else if (o.t === 'b') {
-      peerSeen = 0; setPeer(false);
+      peerSeen = 0; setPeer(false); bbPeer = null; bbLine();
     }
   }
   // "Got it." When the page is in view the message is on the screen: say "opened" too. If not, say it later.
@@ -962,6 +1526,7 @@ header h1{font-size:20px;margin:0}
     var wait = function () { return new Promise(function (res) { setTimeout(res, 120); }); };   // let the packets leave
     var box, b;
     try { box = boxSend(true).then(no, no); } catch (e) { box = Promise.resolve(); }
+    try { nbSend(); } catch (e) {}
     try { b = publish({ t: 'b' }).then(no, no); } catch (e) { b = Promise.resolve(); }
     return Promise.all([box, b]).then(wait, wait);
   }
@@ -1753,6 +2318,7 @@ header h1{font-size:20px;margin:0}
     if (!joined || leaving || covering) return;
     lastKnocks();
     try { boxSend(true).then(null, function () {}); } catch (e) {}
+    try { nbSend(); } catch (e) {}
     try { publish({ t: 'b' }).then(null, function () {}); } catch (e) {}   // "not in the room now": the other phone may knock
   }
   document.addEventListener('visibilitychange', function () {
@@ -1837,6 +2403,10 @@ header h1{font-size:20px;margin:0}
       if (myName) crypto.subtle.sign('HMAC', pingKey, enc.encode('room-box-v1:' + myName)).then(function (sig) {
         boxId = hex(sig).slice(0, 24); boxSoon(2000);     // where the relays keep this person's waiting messages
       }).catch(function () {});
+      if (myName) crypto.subtle.sign('HMAC', pingKey, enc.encode('room-nb-v1:' + myName)).then(function (sig) {
+        nbId = hex(sig).slice(0, 24); nbSoon(2000);      // where the relays keep this person's notebook
+      }).catch(function () {});
+      nbOpen(); nbLoad();
       openStore(); restore();
       job(start);                    // connect once the saved chat is loaded
       setTimeout(start, 9000);       // or after 9 seconds, if the storage is that slow
@@ -1888,7 +2458,7 @@ header h1{font-size:20px;margin:0}
     setFlag(NOCOVER_KEY, coverOn() ? '1' : null); lastAct = Date.now(); refreshSet();
   });
   $('#verse').addEventListener('click', function () {
-    var v = $('#verse'); v.setAttribute('aria-expanded', v.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');
+    var v = $('#verse'); v.setAttribute('aria-expanded', v.getAttribute('aria-expanded') === 'true' ? 'false' : 'true'); verseRead();
   });
   $('#bell').addEventListener('click', function () {
     var p = $('#bell-panel'); p.hidden = !p.hidden; shut('#set-panel', '#set');
