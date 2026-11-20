@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="robots" content="noindex">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; media-src blob:; connect-src 'self' wss://broker.hivemq.com:8884 wss://broker.emqx.io:8084 wss://test.mosquitto.org:8081 https://ntfy.sh https://beta.ourmanna.com; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; media-src blob:; connect-src 'self' wss://broker.hivemq.com:8884 wss://broker.emqx.io:8084 wss://test.mosquitto.org:8081 https://ntfy.sh https://beta.ourmanna.com; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="color-scheme" content="light dark">
 <title>Room</title>
 <link id="icon" rel="icon" href="data:,">
@@ -383,6 +383,152 @@ header,.bb-top{background:var(--ribbon) bottom/100% 5px no-repeat,linear-gradien
 .pr-cnt{flex:none;min-width:58px;text-align:center;font-size:15px;font-weight:800;color:var(--soft)}
 #feel-pray{display:block;width:100%;min-height:52px;margin-top:10px;font-size:17px;font-weight:800}
 @media (prefers-reduced-motion:reduce){.pr-panel{animation:none}}
+</style>
+<style id="skin">
+/* D-clean 1 "Sky Air": airy white / true black, sky-blue accent, soft grey pills, hairlines */
+:root{--bg:#fff;--panel:#fff;--card:#fff;--ink:#0f1114;--soft:#5a6068;--line:#e7e8ec;--sf:#f2f2f4;--me:#0a63d1;--meink:#fff;--you:#c4245f;--them:#f2f2f4;--warn:#f2f2f4;--warnink:#0f1114;--shade:0 1px 2px rgba(0,0,0,.06);--hd:#fff;--hd2:#fff;--hd3:#fff;--hdink:#0f1114;--hlmix:26%}
+@media (prefers-color-scheme:dark){:root{--bg:#000;--panel:#000;--card:#000;--ink:#f6f6f8;--soft:#a3a8b0;--line:#25262a;--sf:#17181b;--me:#4da3ff;--meink:#00111f;--you:#ff7da3;--them:#17181b;--warn:#17181b;--warnink:#f6f6f8;--shade:none;--hd:#000;--hd2:#000;--hd3:#000;--hdink:#f6f6f8;--hlmix:34%}}
+body{font:17px/1.5 -apple-system,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-weight:400}
+h1{font-weight:800;letter-spacing:-.03em}
+button{border-radius:999px;font-weight:650;min-height:44px}
+button.quiet{background:var(--sf);color:var(--ink);border:0;font-weight:600}
+#join-screen{background:var(--bg)}
+#join-form{border:0;background:var(--bg);box-shadow:none;padding:28px 8px}
+.badge{border-radius:50%;width:56px;height:56px}
+input[type=text],input[type=password]{border:0;background:var(--sf);border-radius:999px;padding:14px 20px}
+/* header: slim, flat */
+header,.bb-top{background:var(--panel);color:var(--ink);border-bottom:1px solid var(--line);padding:6px 12px;padding-top:max(6px,env(safe-area-inset-top));gap:8px}
+header h1{font-size:22px;background:none;padding:0;margin:0 2px 0 0;color:var(--ink);border-radius:0}
+header .who,header .who div{color:var(--soft);font-size:12px;line-height:1.35}
+header .dot{background:var(--soft)}
+header #peer[data-online=true] .dot,header #status[data-state=connected] .dot{background:var(--ok)}
+header #status[data-state=offline] .dot{background:var(--bad)}
+header button.quiet,.bb-top button.quiet{color:var(--ink);border:0;background:var(--sf)}
+#bib,#leave,#bb-close,#bb-pick{padding:0 16px;font-size:15px}
+#set{width:44px;padding:0;border-radius:50%;font-size:20px;line-height:1}
+.bb-top button{padding:0 16px;font-size:15px}
+.note{border-left:3px solid var(--f2);background:var(--sf);color:var(--ink);font-weight:500}
+#tools button{min-height:44px;color:var(--me);font-weight:600;background:none;padding:0 12px}
+/* verse of the day */
+#verse{border:0;box-shadow:none;background:var(--sf);border-radius:18px;padding:10px 16px;margin:10px 12px 0;font-weight:400;font-size:15px}
+#verse .v-ref{background:none;color:var(--me);padding:0;margin:0;display:block;font-size:12px}
+#verse-read{background:var(--me);color:var(--meink);margin:8px 12px 0;border:0;font-size:16px}
+#rt-ask{background:var(--sf);color:var(--ink);margin:8px 12px 0;border-radius:999px;text-align:center;font-weight:600}
+/* messages: name label, text, thin line */
+.msg-name{font-weight:800;font-size:12px;letter-spacing:.06em;margin:14px 0 2px}
+.msg-body{border-left-width:2px;padding:2px 0 2px 12px}
+.msg-text{line-height:1.45}
+.msg-meta{color:var(--soft);font-size:12px}
+.msg-feel{margin:8px 0 0}
+.msg[data-e] .msg-name{margin-bottom:2px}
+.msg[data-e] .msg-body{border-left:3px solid var(--f);background:color-mix(in srgb,var(--f) 10%,transparent);border-radius:0 12px 12px 0;padding:8px 12px;margin-top:2px}
+.msg[data-e] .msg-meta{color:var(--soft);opacity:1}
+.fp{border:0;background:color-mix(in srgb,var(--f,var(--sf)) 22%,var(--panel));color:var(--ink);font-size:12px;font-weight:700;padding:3px 10px;letter-spacing:0}
+.qt-w{font-family:inherit;font-size:19px;font-weight:500;border-left-width:3px}
+.qt-ref{border:0;background:var(--sf);color:var(--ink);border-radius:999px;font-weight:700}
+.msg-vn,.msg-pic,#typing{background:var(--sf)}
+/* feeling chooser */
+#feel-row{border-top:1px solid var(--line);background:var(--panel);padding:10px 12px}
+.feel-q{font-weight:700;font-size:14px;color:var(--soft)}
+.feel-pills,.bb-feels{gap:6px}
+button.fp,.feel-pills button.fp,.bb-feels button.fp,#bb-acts .feel-pills button.fp,#bb-note .feel-pills button.fp{border:0;border-radius:16px;background:var(--sf);color:var(--ink);font-weight:600;min-height:52px}
+button.fp[data-e],button.fp[aria-pressed=false][data-e]{background:color-mix(in srgb,var(--f) 16%,var(--panel));color:var(--ink)}
+button.fp[aria-pressed=true]{outline:0;box-shadow:inset 0 0 0 2px var(--ink);background:color-mix(in srgb,var(--f,var(--sf)) 32%,var(--panel))}
+button.fp:not([data-e]){background:var(--sf);color:var(--ink);border:0}
+/* composer */
+#composer{border-top:1px solid var(--line);background:var(--panel);gap:8px}
+#text{border:0;background:var(--sf);padding:12px 18px}
+#composer[data-e] #text{border:0;box-shadow:inset 0 0 0 2px var(--f)}
+#attach,#mic,#rec-cancel,#feel-btn{background:var(--sf);color:var(--ink);border:0}
+#feel-btn[data-e]{background:var(--f);color:var(--fi)}
+#send{background:var(--me);color:var(--meink)}
+#face{background:var(--me);color:var(--meink)}
+/* Bible */
+#bible{background:var(--panel)}
+.bb-sw{background:var(--panel);border-bottom:0;padding:8px 12px 4px;display:flex;gap:4px}
+.bb-sw button{flex:1;flex-direction:row;min-height:44px;border:0;border-radius:999px;background:var(--sf);color:var(--ink);font-size:15px;font-weight:600;gap:0}
+.bb-sw button::before{content:none}
+.bb-sw button[aria-pressed=true],.bb-sw #bb-list[aria-pressed=true]{background:var(--ink);color:var(--panel);box-shadow:none;border:0}
+.bb-rt{background:var(--panel);border-bottom:1px solid var(--line)}
+#bb-follow{color:var(--soft)}
+#bb-tog[aria-pressed=true]{background:var(--me);color:var(--meink);border:0}
+.bb-rt button{padding:0 14px}
+#bb-body{font-size:19px;line-height:1.65}
+.bb-h{color:var(--ink);font-weight:800;font-size:22px}
+.bv .bn{color:var(--me);font-weight:700}
+.bv.hl-me .bt,.bv.hl-you .bt{background:color-mix(in srgb,var(--hc) var(--hlmix),transparent);border-radius:4px;padding:1px 3px;margin:0 -3px}
+.bv.on{outline:2px solid var(--me);outline-offset:2px;border-radius:6px}
+.bx{border-left:2px solid var(--you);background:var(--sf);border-radius:0 12px 12px 0}
+.bx.mine{border-left-color:var(--me);background:var(--sf)}
+.bx[data-e]{border-left-color:var(--f);background:color-mix(in srgb,var(--f) 10%,var(--panel))}
+.bx-h{color:var(--soft);font-weight:600}
+#bb-nav,#bb-acts,#bb-note{border-top:1px solid var(--line);background:var(--panel)}
+#bb-nav button{background:var(--sf);color:var(--ink)}
+#bb-nav button:disabled{opacity:.45;background:var(--sf);color:var(--soft)}
+#bb-sel{color:var(--ink);font-weight:700}
+#bb-bm,#bb-hl,#bb-nt,#bb-say,#bb-clr{background:var(--sf);color:var(--ink);border:0}
+#bb-note textarea{border:0;background:var(--sf);border-radius:16px}
+#bb-note-save{background:var(--me);color:var(--meink)}
+.bb-tabs button{border:0;background:var(--sf);font-weight:600}
+.bb-tabs button[aria-pressed=true]{background:var(--ink);color:var(--panel)}
+.bb-item{border:0;border-bottom:1px solid var(--line);border-radius:0;box-shadow:none;width:100%;margin:0;padding:12px 0;background:none;border-left:3px solid var(--f,var(--line))}
+.bb-item.k1,.bb-item.k2,.bb-item.k3{border-left:3px solid var(--f,var(--line))}
+.bb-item.k2{border-left-color:var(--f,#e0b100)}
+.bb-item>span{padding:0 14px}
+.bb-item::after{display:none}
+.bi-band{display:inline-flex;width:max-content;min-height:0;margin:0 0 6px 14px;padding:2px 10px;border-radius:999px;background:color-mix(in srgb,var(--f,var(--sf)) 24%,var(--panel));color:var(--ink);font-size:12px}
+.bi-band:empty{display:none}
+.bi-v{font-family:inherit;font-size:17px}
+.bi-ref{font-size:16px}
+/* prayers */
+.pr-q{color:var(--ink);font-weight:800;font-size:30px}
+.pr-sub{font-weight:500}
+.pr-grid{gap:8px}
+.pr-chip,.pr-chip.mo{background:color-mix(in srgb,var(--f,var(--soft)) 14%,var(--panel));color:var(--ink);border:0;border-radius:18px;font-weight:700;padding:8px 3px}
+.pr-chip.mo{background:var(--sf)}
+.pr-chip[aria-pressed=true]{outline:0;box-shadow:inset 0 0 0 2px var(--ink)}
+.pr-panel{border:0;border-radius:18px;background:var(--sf)}
+.pr-panel::before{border:0;background:var(--sf)}
+.pr-ph{font-weight:800}
+.pr-item{background:var(--panel);border:0;border-radius:14px;font-weight:600}
+.pr-open{border:0;border-radius:0;border-top:3px solid var(--f,var(--me));background:none}
+.pr-band,.pr-open.mo .pr-band{background:none;color:var(--soft);font-size:14px;font-weight:700;padding:10px 0 0;text-transform:uppercase;letter-spacing:.06em}
+.pr-title{color:var(--ink);margin:6px 0 0;font-weight:800;font-size:26px}
+.pr-text{font-family:inherit;font-size:21px;line-height:1.65;margin:12px 0 20px}
+.pr-now{background:var(--sf);color:var(--ink);box-shadow:none}
+.pr-now::after{color:var(--me)}
+.pr-nl{font-weight:600;color:var(--soft)}
+.pr-bar{background:linear-gradient(transparent,var(--panel) 22%)}
+#pr-fav{background:var(--sf);border:0;color:var(--soft)}
+#pr-fav[aria-pressed=true]{background:var(--f1);color:var(--f1i)}
+#pr-send{background:var(--me);color:var(--meink)}
+#feel-pray{background:var(--sf);color:var(--ink)}
+#bell-panel,#set-panel{background:var(--panel);border-bottom:1px solid var(--line)}
+#bell-panel h2,#set-panel h2,#set-panel h3{color:var(--ink);font-weight:800}
+#bell-panel a{color:var(--me)}
+
+:root{--me:var(--ink);--meink:var(--bg);--you:var(--ink)}
+/* calm layer: every feeling is the same quiet grey (the emoji and word still say which), no rainbow strip */
+:root{--ribbon:none;--f1:var(--sf,#f2f2f4);--f1i:var(--ink);--f2:var(--sf,#f2f2f4);--f2i:var(--ink);--f3:var(--sf,#f2f2f4);--f3i:var(--ink);--f4:var(--sf,#f2f2f4);--f4i:var(--ink);--f5:var(--sf,#f2f2f4);--f5i:var(--ink);--f6:var(--sf,#f2f2f4);--f6i:var(--ink);--f7:var(--sf,#f2f2f4);--f7i:var(--ink);--f8:var(--sf,#f2f2f4);--f8i:var(--ink);--f9:var(--sf,#f2f2f4);--f9i:var(--ink);--f10:var(--sf,#f2f2f4);--f10i:var(--ink);--f11:var(--sf,#f2f2f4);--f11i:var(--ink);--f12:var(--sf,#f2f2f4);--f12i:var(--ink);--f13:var(--sf,#f2f2f4);--f13i:var(--ink);--f14:var(--sf,#f2f2f4);--f14i:var(--ink);--f15:var(--sf,#f2f2f4);--f15i:var(--ink);--f16:var(--sf,#f2f2f4);--f16i:var(--ink);}
+.pr-chip,.pr-chip.mo{background:var(--sf,#f2f2f4);color:var(--ink);border:0;box-shadow:none}
+.pr-now,.pr-open.mo .pr-band{background:var(--sf,#f2f2f4);color:var(--ink)}
+/* type layer: Figtree everywhere, tighter bold headings, fewer and smaller emojis */
+@font-face{font-family:"Figtree";font-style:normal;font-weight:300 900;font-display:swap;src:url(fonts/figtree-latin-wght-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Figtree";font-style:normal;font-weight:300 900;font-display:swap;src:url(fonts/figtree-latin-ext-wght-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+:root{--snap:"Figtree",-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+html body,html body *{font-family:var(--snap)!important}
+body{font-weight:500;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+h1,.pr-q,.pr-title,.feel-q,#set-panel h2,#bell-panel h2{font-weight:800;font-style:normal;letter-spacing:-.025em}
+.pr-q{font-size:27px}
+.bb-h,#set-panel h3,.pr-band,.pr-ph,#bb-sel,.bi-band{font-weight:800;letter-spacing:-.01em}
+.msg-name,.qt-tag,.fp{font-weight:800;letter-spacing:.03em}
+button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{font-weight:700}
+.msg-text{font-weight:500}
+.bv,.pr-text,.qt-w,.bi-v,#verse{font-style:normal;font-weight:500}
+.bb-sw button::before{content:none}
+.pr-chip{flex-direction:column;justify-content:center;gap:4px;min-height:66px;padding:8px 4px;text-align:center;font-size:14.5px}
+.pr-nm{overflow-wrap:normal;word-break:normal;hyphens:none}
+.pr-em{font-size:20px}
 </style>
 </head>
 <body>
