@@ -41,6 +41,14 @@ If the other person is in but you cannot see each other, one of the passwords is
 - **Verse of the day.** Today's Bible verse (New International Version) shows at the top of the chat. It comes from OurManna (beta.ourmanna.com): the page asks once a day, for today's verse only, and sends nothing about the chat. The answer is kept on the phone. If the service is slow or not there, the last verse shows, or Genesis 29:20. It is open the first time each day, then a small bar. Tap it to open or fold it. When the verse is open, "Read the chapter" opens the reader there.
 - **Bible.** The Bible button opens a reader (World English Bible, public domain). Pick a book, then a chapter, or step with the next and previous buttons. Tap a verse (tap two to choose a few) to bookmark it, highlight it, add a note or send it to the chat. Every bookmark, highlight and note shows who made it, and each person can change or delete only their own. The **Saved** button lists them, with tabs for All, Bookmarks, Highlights and Notes and the words of each verse; tap one to open it in its place. They reach the other phone even when you are never in the room together, are saved on the phone, and stay when the chat is deleted. A book is loaded from this page's own address only when it is opened. **Read together** (a switch in the reader): while both of you have it on, when one opens a chapter the other phone opens it too ("Following ..."). When one of you turns it on, the other sees "... wants to read together. Tap to join." in the chat, or, when not in the room and notifications are on, gets "Read together" on the phone. Nothing about the reading is kept.
 
+## Travel map
+
+- **Our travel map.** Tap the globe button at the top of the chat. A 3D globe opens. Tap a place to put a pin, then choose **I want to go here** or **I have been here**. Tap a pin to see it again. **Our places** lists every pin. Lines join the pins in the order they were put.
+- **Shared, and kept.** Pins are saved on the phone and sent to the other person, encrypted, like the Bible notes. Only the person who put a pin can change it or remove it. One person can keep 150 pins.
+- **Places near here.** A pin card shows places near it, with pictures. These come from Wikipedia, and so does **Search a place**. The page asks Wikipedia only after you tap the globe or search. Wikipedia can see which places you look at. It never sees your messages, your names or the password.
+- **Open in Google Maps.** This button opens Google Maps outside the app, at the pin. Google then sees that place.
+- **The world comes with the page.** The country shapes are in [`map/world.json`](map/world.json) on this site. Country shapes: Natural Earth (public domain), packed by world-atlas (ISC licence).
+
 ## How it works
 
 Everything is in [`index.html`](index.html). There is no build step and no dependency.
@@ -52,7 +60,7 @@ Everything is in [`index.html`](index.html). There is no build step and no depen
 | Packets | 12 random bytes (nonce) + AES-GCM ciphertext, padded to 1024, 2048, 4096… bytes so the length of a message is hidden. |
 | Replay guard | A packet is dropped if it does not decrypt, if its nonce was seen before, or if its clock is more than 10 minutes off. The packets a relay keeps (the notification choices and the waiting messages) have no clock check; an old one cannot undo anything newer. |
 | Photos | Redrawn in the browser as a JPEG (1280 px at most), then sent encrypted in pieces of 9,000 bytes. The pieces wait, encrypted, on the relays until the other phone has them all; then the relays are told to forget them. |
-| Voice notes | Recorded in the browser (MP4 or WebM sound, about 32 kbit/s), then sent encrypted in the same pieces as a photo. Played back only as sound. |
+| Voice notes | Recorded in the browser (MP4 or WebM sound, about 64 kbit/s), then sent encrypted in the same pieces as a photo. Played back only as sound. |
 | Storage | IndexedDB, one encrypted record per message and per photo or voice note. No key or password is ever stored. |
 | Waiting messages | Each person has one encrypted "box" that the relays keep: the messages nobody has received yet (30 at most, no photo bytes) and which messages that person holds. A page that opens the room alone reads the boxes. The time a box was sealed is the "last here" time. |
 | Location | A request and an answer are ordinary encrypted messages. The place (latitude, longitude, accuracy) is read once, after a tap, and saved with the chat like any message. |
@@ -62,7 +70,7 @@ The comment at the top of the script in `index.html` describes the packet types,
 
 ## Safety
 
-- **Nothing from outside.** A content security policy lets the page load no outside script, style or picture, and lets it talk only to this page's own address (the Bible), the three relays, beta.ourmanna.com (the verse of the day) and, for notifications, ntfy.sh. Nothing is sent to ntfy.sh unless someone in the room turned notifications on or asked for a test.
+- **Almost nothing from outside.** A content security policy lets the page load no outside script or style. The only outside pictures are place pictures from Wikipedia (upload.wikimedia.org). The page can talk only to its own address (the Bible, the world map), the three relays, beta.ourmanna.com (the verse of the day), en.wikipedia.org (places for the travel map, only after you tap the globe or search) and, for notifications, ntfy.sh. Nothing is sent to ntfy.sh unless someone in the room turned notifications on or asked for a test.
 - **No framing.** The page refuses to run inside another website.
 - **Short passwords need a second tap.** A password under 12 characters shows a warning first.
 - **Hides when you look away,** and also after 10 minutes without a touch.

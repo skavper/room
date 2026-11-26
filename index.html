@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="robots" content="noindex">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; media-src blob:; connect-src 'self' wss://broker.hivemq.com:8884 wss://broker.emqx.io:8084 wss://test.mosquitto.org:8081 https://ntfy.sh https://beta.ourmanna.com; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data: https://upload.wikimedia.org; media-src blob:; connect-src 'self' wss://broker.hivemq.com:8884 wss://broker.emqx.io:8084 wss://test.mosquitto.org:8081 https://ntfy.sh https://beta.ourmanna.com https://en.wikipedia.org; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="color-scheme" content="light dark">
 <title>Room</title>
 <link id="icon" rel="icon" href="data:,">
@@ -443,6 +443,39 @@ button.fp:not([data-e]){background:var(--sf);color:var(--ink);border:0}
 #feel-btn[data-e]{background:var(--f);color:var(--fi)}
 #send{background:var(--me);color:var(--meink)}
 #face{background:var(--me);color:var(--meink)}
+/* Photo tray under the message bar, and the camera */
+@keyframes tray-in{from{height:0;opacity:.3}}
+@keyframes flash{from{opacity:.95}to{opacity:0}}
+#tray{flex:none;display:flex;flex-direction:column;height:300px;max-height:46vh;overflow:hidden;background:var(--panel);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);animation:tray-in .28s cubic-bezier(.2,.8,.2,1)}
+#tray-top{flex:none;display:flex;align-items:center;gap:10px;padding:6px 12px;min-height:56px}
+#tray-hint{flex:1;min-width:0;font-size:14px;color:var(--soft)}
+#tray-hint[data-warn]{color:var(--ink);font-weight:650;animation:shake .4s}
+#tray-send{flex:none;padding:0 18px;background:var(--me);color:var(--meink);animation:pop .25s cubic-bezier(.2,.8,.2,1)}
+#tray-grid{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:max-content;align-content:start;gap:3px;padding:0 3px 3px}
+.tile{position:relative;aspect-ratio:1;width:100%;min-height:0;padding:0;border:0;border-radius:10px;overflow:hidden;background:var(--sf);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:650;animation:pop .32s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0)*28ms);transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s}
+.tile canvas,.tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;animation:fade .2s}
+.tile[aria-pressed=true]{transform:scale(.9);box-shadow:0 0 0 3px var(--me)}
+.tick{position:absolute;top:6px;right:6px;z-index:1;width:24px;height:24px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.25);box-shadow:0 1px 3px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--meink)}
+.tile[aria-pressed=true] .tick{background:var(--me);border-color:var(--meink);animation:pop .22s cubic-bezier(.3,1.6,.5,1)}
+.tray-card{grid-column:1/-1;display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:14px;border-radius:12px;background:var(--sf);color:var(--ink);font-size:15px;animation:rise .3s cubic-bezier(.2,.8,.2,1) backwards}
+.tray-card p{margin:0;color:var(--soft)}
+.tray-card button{padding:0 18px;background:var(--me);color:var(--meink)}
+#cam{animation:fade .18s;position:absolute;inset:0;z-index:7;background:#000;display:flex;flex-direction:column;overflow:hidden}
+#cam-video,#cam-still{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#cam-still{object-fit:contain;background:#000;animation:zoom .24s cubic-bezier(.2,.8,.2,1)}
+#cam[data-face=user] #cam-video{transform:scaleX(-1)}
+#cam-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#cam-flash.go{animation:flash .4s ease-out}
+#cam-note{position:relative;margin:auto 24px;padding:16px;border-radius:14px;background:var(--panel);color:var(--ink);text-align:center;font-size:16px;animation:rise .3s cubic-bezier(.2,.8,.2,1)}
+#cam-close{position:absolute;top:max(12px,env(safe-area-inset-top));left:12px;z-index:2;width:44px;height:44px;padding:0;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;display:flex;align-items:center;justify-content:center}
+.cam-bar{position:absolute;left:0;right:0;bottom:0;z-index:2;display:flex;align-items:center;justify-content:space-around;padding:18px 24px;padding-bottom:max(22px,env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.55));animation:rise .3s cubic-bezier(.2,.8,.2,1)}
+#cam-shot{width:76px;height:76px;padding:0;border-radius:50%;border:5px solid #fff;background:rgba(255,255,255,.25)}
+#cam-shot:active{transform:scale(.9);background:#fff}
+#cam-flip,.cam-gap{width:52px;height:52px;padding:0;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;display:flex;align-items:center;justify-content:center}
+.cam-gap{background:none}
+#cam-done button{min-width:120px;padding:0 22px;font-size:17px;background:var(--sf);color:var(--ink)}
+#cam-done #cam-send{background:var(--me);color:var(--meink)}
+@media (prefers-reduced-motion:reduce){.tile,.tray-card{animation-delay:0s}}
 /* Bible */
 #bible{background:var(--panel)}
 .bb-sw{background:var(--panel);border-bottom:0;padding:8px 12px 4px;display:flex;gap:4px}
@@ -529,6 +562,83 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
 .pr-chip{flex-direction:column;justify-content:center;gap:4px;min-height:66px;padding:8px 4px;text-align:center;font-size:14.5px}
 .pr-nm{overflow-wrap:normal;word-break:normal;hyphens:none}
 .pr-em{font-size:20px}
+/* ==== travel map: always the dark "Blue planet" look ==== */
+#map-btn{flex:none;width:44px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center}
+#map-btn svg{display:block}
+@media (max-width:430px){header{gap:6px;padding-left:10px;padding-right:10px}header h1{font-size:20px;margin-right:0}#bib,#leave{padding:0 10px}}
+#map{position:absolute;inset:0;z-index:7;display:flex;flex-direction:column;overflow:hidden;color:#fff;background:radial-gradient(120% 90% at 50% 30%,#0c1a3d,#000 72%)}
+#mp-stage{position:relative;flex:1;min-height:0}
+.g-host{position:absolute;inset:0;overflow:hidden;contain:strict;background:radial-gradient(120% 90% at 50% 30%,#0c1a3d,#000 72%)}
+.g-cv{position:absolute;left:0;top:0;width:100%;height:100%;display:block;touch-action:none}
+.g-glow{position:absolute;left:-150px;top:-150px;width:300px;height:300px;opacity:0;pointer-events:none;will-change:transform,opacity}
+.g-glow i{display:block;width:100%;height:100%;border-radius:50%;background:radial-gradient(closest-side,rgba(120,190,255,.625) 68.6%,rgba(120,190,255,0));animation:g-glow 1.96s ease-in-out infinite alternate}
+@keyframes g-glow{from{opacity:.6}to{opacity:1}}
+.g-shoot{position:absolute;left:0;top:0;width:49px;height:1.5px;border-radius:2px;opacity:0;pointer-events:none;transform-origin:0 50%;background:linear-gradient(90deg,#fff,rgba(255,255,255,0));animation:g-shoot 7s linear infinite;will-change:transform,opacity}
+@keyframes g-shoot{0%{opacity:1;transform:translate3d(calc(var(--gw)*.95),calc(var(--gh)*.06),0) rotate(-21.4deg)}10%,100%{opacity:0;transform:translate3d(calc(var(--gw)*.45),calc(var(--gh)*.26),0) rotate(-21.4deg)}}
+.g-off .g-glow i,.g-off .g-shoot,.g-still .g-glow i,.g-still .g-shoot{animation:none}
+@media (prefers-reduced-motion: reduce){.g-glow i,.g-shoot{animation:none}}
+#map button{min-height:44px;padding:0 18px;border:1px solid rgba(255,255,255,.18);border-radius:99px;background:rgba(10,22,52,.78);color:#fff;font-size:15px;font-weight:700;box-shadow:none}
+#map .mp-pri{background:#ff4d5a;border-color:#ff4d5a;color:#fff}
+#mp-top{position:absolute;left:0;right:0;top:0;display:flex;align-items:flex-start;gap:10px;padding:12px 16px 0;padding-top:max(12px,env(safe-area-inset-top));pointer-events:none}
+#mp-head{flex:1;min-width:0}
+#mp-head h2{margin:0;font-size:30px;line-height:1.1;font-weight:800;letter-spacing:-.02em;color:#fff;text-shadow:0 2px 14px #000}
+#mp-sub{margin:4px 0 0;font-size:15px;color:#9fb0e6;text-shadow:0 1px 8px #000}
+#mp-close{pointer-events:auto}
+#mp-find{position:absolute;left:16px;right:16px;top:calc(max(12px,env(safe-area-inset-top)) + 80px);z-index:1}
+#mp-q{width:100%;min-height:46px;padding:10px 18px;border:1px solid rgba(255,255,255,.18);border-radius:99px;background:rgba(10,22,52,.78);color:#fff;font-size:16px;-webkit-appearance:none;appearance:none}
+#mp-q::placeholder{color:#9fb0e6;opacity:1}
+#mp-q:focus{outline:0;border-color:#ff4d5a}
+#mp-res{margin-top:8px;max-height:min(52vh,420px);overflow-y:auto;padding:6px;border:1px solid rgba(255,255,255,.18);border-radius:24px;background:rgba(10,22,52,.93);animation:mp-in .3s both}
+#map .mp-r{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:6px 10px;border:0;border-radius:18px;background:transparent;text-align:left;font-weight:600}
+#map .mp-r:active{background:rgba(255,255,255,.08)}
+.mp-r img,.mp-ni{flex:none;width:44px;height:44px;border-radius:12px;object-fit:cover;background:rgba(255,255,255,.08)}
+.mp-r>span:last-child{flex:1;min-width:0}
+.mp-r b,.mp-r small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-r b{font-size:16px;color:#fff}
+.mp-r small{font-size:13px;font-weight:500;color:#a9b8ea}
+.mp-dot{flex:none;width:14px;height:14px;margin:0 8px;border-radius:50%;background:#ff4d5a;box-shadow:0 0 0 3px rgba(255,77,90,.25)}
+.mp-dot.mp-been{background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.2)}
+.mp-msg{margin:8px 10px;font-size:15px;color:#a9b8ea}
+#mp-load{position:absolute;left:0;right:0;top:42%;text-align:center;font-size:16px;color:#9fb0e6;pointer-events:none}
+#mp-load i{display:block;width:44px;height:44px;margin:0 auto 14px;border:2px solid rgba(255,255,255,.75);border-radius:50%;animation:g-wait 1.2s ease-out infinite}
+@keyframes g-wait{from{transform:scale(.4);opacity:1}to{transform:scale(1.5);opacity:0}}
+#mp-fail{position:absolute;left:24px;right:24px;top:38%;padding:18px;border:1px solid rgba(255,255,255,.18);border-radius:24px;background:rgba(10,22,52,.93);text-align:center;font-size:16px}
+#mp-fail p{margin:0 0 14px}
+#mp-chips{position:absolute;left:16px;right:16px;bottom:16px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;pointer-events:none}
+#map .mp-chip{pointer-events:auto;opacity:0;transform:translateY(18px);transition:opacity .4s,transform .55s cubic-bezier(.2,1.5,.4,1)}
+#map.mp-go .mp-chip{opacity:1;transform:none}
+#map.mp-go .mp-chip+.mp-chip{transition-delay:.08s}
+span.mp-chip{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:1px solid rgba(255,255,255,.18);border-radius:99px;background:rgba(10,22,52,.78);font-size:14px;color:#9fb0e6}
+#mp-card{position:absolute;left:8px;right:8px;bottom:8px;z-index:2;max-height:62%;overflow-y:auto;overscroll-behavior:contain;padding:8px 18px 18px;border:1px solid rgba(255,255,255,.18);border-radius:24px;background:rgba(10,22,52,.93);color:#fff;visibility:hidden;transform:translateY(calc(100% + 40px));transition:transform .35s ease-in,visibility 0s .35s}
+#mp-card.up{visibility:visible;transform:none;transition:transform .6s cubic-bezier(.2,1.25,.3,1)}
+.mp-grab{display:block;width:44px;height:5px;margin:0 auto 8px;border-radius:3px;background:rgba(255,255,255,.3)}
+.mp-ctop{display:flex;align-items:flex-start;gap:10px}
+.mp-ch{flex:1;min-width:0}
+#mp-card h3{margin:0;font-size:26px;line-height:1.15;font-weight:800;letter-spacing:-.02em;overflow-wrap:anywhere}
+.mp-csub{margin:4px 0 0;font-size:14px;color:#a9b8ea}
+.mp-who{margin:10px 0 0;font-size:15px;color:#a9b8ea}
+.mp-tag{display:inline-block;margin-top:10px;padding:4px 12px;border-radius:99px;background:rgba(255,77,90,.18);color:#ff8f98;font-size:14px;font-weight:700}
+.mp-tag.mp-been{background:rgba(255,255,255,.14);color:#fff}
+.mp-lab{display:block;margin:14px 0 6px;font-size:14px;color:#a9b8ea}
+#mp-name{width:100%;min-height:46px;padding:10px 16px;border:1px solid rgba(255,255,255,.18);border-radius:16px;background:rgba(255,255,255,.06);color:#fff;font-size:16px}
+#mp-name:focus{outline:0;border-color:#ff4d5a}
+.mp-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.mp-btns>*{flex:1 1 140px}
+#map a.mp-pri{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:99px;text-decoration:none;font-weight:700;font-size:15px}
+.mp-say{margin:10px 0 0;font-size:15px;color:#ffd166}
+.mp-say:empty{display:none}
+.mp-ask{margin-top:12px;padding:12px;border:1px solid rgba(255,255,255,.14);border-radius:18px}
+.mp-ask p{margin:0 0 4px;font-weight:700}
+#mp-card h4{margin:18px 0 8px;font-size:12.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#a9b8ea}
+.mp-tiles{display:flex;gap:10px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}
+.mp-tile{flex:none;width:132px;color:#fff;text-decoration:none;animation:mp-in .45s both;animation-delay:calc(var(--i,0)*80ms)}
+.mp-ph{display:block;width:132px;height:96px;overflow:hidden;border-radius:16px;background:linear-gradient(100deg,rgba(255,255,255,.06) 30%,rgba(255,255,255,.16) 50%,rgba(255,255,255,.06) 70%);background-size:300% 100%;animation:shimmer 1.4s linear infinite}
+.mp-ph[data-ready]{animation:none;background:rgba(255,255,255,.06)}
+.mp-ph img{display:block;width:100%;height:100%;object-fit:cover;animation:fade .35s}
+.mp-tile b{display:-webkit-box;margin-top:6px;overflow:hidden;font-size:14px;line-height:1.25;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+.mp-tile small{font-size:12.5px;color:#a9b8ea}
+@keyframes mp-in{from{opacity:0;transform:translateY(10px)}}
+#mp-wiki{flex:none;margin:0;padding:8px 16px;padding-bottom:max(8px,env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.14);background:#000;font-size:12.5px;line-height:1.35;color:#9fb0e6}
 </style>
 </head>
 <body>
@@ -555,6 +665,7 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
       <div id="last" hidden></div>
     </div>
     <button id="bib" type="button" class="quiet">Bible</button>
+    <button id="map-btn" type="button" class="quiet" aria-label="Map"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9s1.3-6.3 3.8-9z"/></svg></button>
     <button id="set" type="button" class="quiet" aria-label="Settings" aria-expanded="false">&#9881;&#65038;</button>
     <button id="leave" type="button" class="quiet">Leave</button>
   </header>
@@ -569,6 +680,18 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
     <div id="bb-acts" hidden><div id="bb-sel"></div><div class="feel-q">How do you feel?</div><div id="bb-feel" class="feel-pills"></div><div class="row"><button id="bb-bm" type="button" class="quiet">Bookmark</button><button id="bb-hl" type="button" class="quiet">Highlight</button><button id="bb-nt" type="button" class="quiet">Add a note</button><button id="bb-say" type="button" class="quiet">Send to chat</button><button id="bb-clr" type="button" class="quiet">Clear</button></div></div>
     <div id="bb-note" hidden><div class="feel-q">How do you feel?</div><div id="bb-note-feel" class="feel-pills"></div><textarea id="bb-note-text" maxlength="600" aria-label="Your note"></textarea><div class="row"><button id="bb-note-save" type="button">Save note</button><button id="bb-note-cancel" type="button" class="quiet">Cancel</button></div></div>
     <div id="bb-nav"><button id="bb-prev" type="button" class="quiet">Previous chapter</button><button id="bb-next" type="button" class="quiet">Next chapter</button></div>
+  </div>
+  <div id="map" hidden>
+    <div id="mp-stage">
+      <div id="mp-globe"></div>
+      <div id="mp-top"><div id="mp-head"><h2>Our travel map</h2><p id="mp-sub"></p></div><button id="mp-close" type="button">Close</button></div>
+      <div id="mp-find"><input id="mp-q" type="search" maxlength="80" autocomplete="off" spellcheck="false" enterkeyhint="search" placeholder="Search a place" aria-label="Search a place"><div id="mp-res" hidden></div></div>
+      <div id="mp-load" role="status"><i></i>Loading the world</div>
+      <div id="mp-fail" role="alert" hidden><p>The map could not load. Check the internet. Then try again.</p><button id="mp-retry" type="button" class="mp-pri">Try again</button></div>
+      <div id="mp-chips"><button id="mp-count" type="button" class="mp-chip">0 places</button><span class="mp-chip">Tap the globe to put a pin.</span></div>
+      <div id="mp-card" role="dialog" aria-label="Place"></div>
+    </div>
+    <p id="mp-wiki">Place pictures come from Wikipedia. Wikipedia can see which places you look at. It never sees your messages.</p>
   </div>
   <div id="notice" class="note" hidden>No connection. Your messages will go out when it is back.</div>
   <div id="clock-note" class="note" hidden>The time on one phone looks wrong. Set the time to automatic on both phones.</div>
@@ -627,8 +750,8 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
   </div>
   <div id="feel-row" role="group" aria-label="How do you feel?" hidden><div class="feel-q">How do you feel?</div><div id="feel-pills" class="feel-pills"></div><button id="feel-pray" type="button" class="quiet">🙏 Find a prayer</button></div>
   <form id="composer" autocomplete="off">
-    <button id="attach" type="button" class="round" aria-label="Send a photo" title="Send a photo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg></button>
-    <input id="file" type="file" accept="image/*" hidden>
+    <button id="attach" type="button" class="round" aria-label="Send a photo" aria-expanded="false" title="Send a photo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg></button>
+    <input id="file" type="file" accept="image/*" multiple hidden>
     <button id="feel-btn" type="button" class="round" aria-label="Pick a feeling" aria-expanded="false" title="Pick a feeling"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 14.5s1.5 2 4 2 4-2 4-2"/><path d="M9 9.5h.01M15 9.5h.01" stroke-width="3"/></svg></button>
     <button id="mic" type="button" class="round" aria-label="Record a voice note" title="Record a voice note"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
     <div id="rec" role="group" aria-label="Recording a voice note">
@@ -639,9 +762,22 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
     <input id="text" type="text" maxlength="2000" enterkeyhint="send" autocomplete="off" placeholder="Type a message">
     <button id="send" type="submit" class="round" aria-label="Send" title="Send"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
   </form>
+  <div id="tray" hidden>
+    <div id="tray-top"><span id="tray-hint" aria-live="polite">Tap the photos you want to send.</span><button id="tray-send" type="button" hidden>Send 1 photo</button></div>
+    <div id="tray-grid" role="group" aria-label="Photos"></div>
+  </div>
   <div id="viewer" hidden>
     <img id="viewer-img" alt="Photo">
     <div class="viewer-bar"><a id="viewer-save" download="photo.jpg">Save</a><button id="viewer-close" type="button">Close</button></div>
+  </div>
+  <div id="cam" role="dialog" aria-label="Camera" hidden>
+    <video id="cam-video" playsinline muted autoplay></video>
+    <img id="cam-still" alt="The photo you took" hidden>
+    <div id="cam-flash" aria-hidden="true"></div>
+    <p id="cam-note" role="alert" hidden>The camera could not be opened. Allow the camera for this page. Then try again.</p>
+    <button id="cam-close" type="button" aria-label="Close the camera" title="Close"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <div id="cam-live" class="cam-bar"><button id="cam-flip" type="button" aria-label="Turn the camera around" title="Turn the camera around"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></svg></button><button id="cam-shot" type="button" aria-label="Take a photo" title="Take a photo"></button><span class="cam-gap" aria-hidden="true"></span></div>
+    <div id="cam-done" class="cam-bar" hidden><button id="cam-again" type="button">Again</button><button id="cam-send" type="button">Send</button></div>
   </div>
 </section>
 <script>
@@ -774,7 +910,7 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
   var RELAYS = ['wss://broker.hivemq.com:8884/mqtt', 'wss://broker.emqx.io:8084/mqtt', 'wss://test.mosquitto.org:8081/mqtt'];
   var SALT = 'room-chat-v1-salt', ROUNDS = 250000, PAD = 1024, KEEP = 40, BEAT = 8000, PEER_TTL = 24000, TYPING_TTL = 6000, SKEW = 600000;
   var CHUNK = 9000, PIC_AIM = 200000, PIC_MAX = 600000, IDLE = 600000;
-  var VN_TYPES = ['audio/webm', 'audio/mp4', 'audio/ogg'], VN_MAX = 120, VN_BYTES = 560000;   // a voice note: 2 minutes at most
+  var VN_TYPES = ['audio/webm', 'audio/mp4', 'audio/ogg'], VN_MAX = 120, VN_BYTES = 1150000;   // a voice note: 2 minutes at most
   var NTFY = 'https://ntfy.sh/', PING_GAP = 120000;
   var enc = new TextEncoder(), dec = new TextDecoder();
   if (window.top !== window.self) { document.body.textContent = ''; return; }   // never run inside another page
@@ -860,6 +996,7 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
   }
   // Looked away while in a chat: put the cover up at once, tell the other person, then reload (that signs out).
   function cover() {
+    trayAway();   // the camera goes off and the tray closes (not while the browser asks about the camera)
     if (!joined || covering || picking) return;   // the photo picker takes the focus: that is not looking away
     // A refresh or a closed tab also counts as "hidden" for a moment. That is not looking away:
     // the page is going anyway, and the next load must show the sign-in form, not the cover.
@@ -875,6 +1012,7 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
     var go = function () { location.reload(); };
     bye().then(go, go);
     setTimeout(go, 800);
+    mpShut();
   }
   // The page loaded itself again after looking away: show the cover, this one time only.
   // The note is thrown away at once, so a refresh by hand brings the sign-in form back.
@@ -1074,6 +1212,14 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
   /* the notebook: every phone writes its own items; the other phone merges them by id (the newest edit wins) */
   function nbOk(e) {
     if (!e || typeof e !== 'object' || typeof e.id !== 'string' || !/^[0-9a-z]{6,20}$/.test(e.id)) return false;
+    if (e.k === 4) {   // a pin on the travel map: these fields only, each in range
+      if (typeof e.a !== 'string' || !e.a || e.a.length > 30 || !int(e.t, 1, 1e13)) return false;
+      if (e.d === 1) return Object.keys(e).sort().join() === 'a,d,id,k,t';
+      return Object.keys(e).sort().join() === 'a,id,k,lat,lon,s,t,x' && (e.s === 1 || e.s === 2) &&
+        typeof e.lon === 'number' && isFinite(e.lon) && e.lon >= -180 && e.lon <= 180 && Math.round(e.lon * 1e4) / 1e4 === e.lon &&
+        typeof e.lat === 'number' && isFinite(e.lat) && e.lat >= -90 && e.lat <= 90 && Math.round(e.lat * 1e4) / 1e4 === e.lat &&
+        typeof e.x === 'string' && e.x.length <= 60 && e.x.trim().length > 0;
+    }
     if (!int(e.k, 1, 3) || typeof e.a !== 'string' || !e.a || e.a.length > 30 || !int(e.t, 1, 1e13)) return false;
     if (e.e !== undefined && !int(e.e, 1, 7)) return false;
     if (e.d === 1) return true;
@@ -1085,6 +1231,12 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
   function nbTake(e) {
     var cur = nb.get(e.id);
     if (cur && (cur.t > e.t || (cur.t === e.t && (cur.d || 0) >= (e.d || 0)))) return false;
+    if (e.k === 4 || (cur && cur.k === 4)) {   // a pin: only the person who put it can change it
+      if (cur && (cur.k !== e.k || norm(cur.a) !== norm(e.a))) return false;
+      var p = { id: e.id, k: 4, a: e.a, t: e.t };
+      if (e.d === 1) p.d = 1; else { p.lon = e.lon; p.lat = e.lat; p.x = e.x; p.s = e.s; }
+      nb.set(p.id, p); return true;
+    }
     var c = { id: e.id, k: e.k, a: e.a, t: e.t };
     if (e.d === 1) c.d = 1; else { c.b = e.b; c.c = e.c; c.v = e.v; c.w = e.w; if (e.k === 3) c.x = e.x; if (e.e) c.e = e.e; }
     nb.set(c.id, c); return true;
@@ -1134,7 +1286,7 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
             if (nbTake(o)) changed = true;
           });
           if (drop.length && nbDb) { try { var t = nbDb.transaction('r', 'readwrite'); drop.forEach(function (k) { t.objectStore('r').delete(k); }); } catch (e) {} }
-          if (changed) { bbDraw(); nbSoon(1500); }
+          if (changed) { bbDraw(); mpDraw(); nbSoon(1500); }
         });
       });
     });
@@ -1177,14 +1329,14 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
     o.i.forEach(function (e) { if (nbOk(e) && nbTake(e)) changed.push(nb.get(e.id)); });
     if (!changed.length) return;
     changed.forEach(nbWrite);
-    bbDraw();
+    bbDraw(); mpDraw();
     if (changed.some(nbMine)) nbSoon(1000);       // a phone of mine, with an older copy, is catching up
   }
   // My own change: a new item, an edit, or a removal (the same id with d: 1).
   function nbPut(it) {
     var prev = nb.get(it.id);
     it.t = Math.max(Date.now(), prev ? prev.t + 1 : 0);
-    nb.set(it.id, it); nbWrite(it); nbSoon(400); bbDraw();
+    nb.set(it.id, it); nbWrite(it); nbSoon(400); bbDraw(); mpDraw();
   }
   function nbGone(it) { return { id: it.id, k: it.k, a: it.a, t: 0, d: 1 }; }
 
@@ -1195,6 +1347,883 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
     bbDraw();
     if (bbRt && !fromPeer) bbSay(1);
   }
+/* ==== GLOBE ENGINE START ==== */
+// A 3D globe drawn on one 2D canvas. Blue planet look.
+//   host : an empty positioned element. The engine fills it.
+//   cb   : { first(), ready(), tap(pinIndex, lon, lat) }
+//   opt  : { q: fixed sharpness, t: fixed time (still picture), lp: fixed intro progress, view: [lon, lat], sun: [lon, lat] }
+function Globe(host, cb, opt) {
+  cb = cb || {}; opt = opt || {};
+  var D = Math.PI / 180, PI = Math.PI, TAU = Math.PI * 2;
+  var RM = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var FZ = RM || opt.t != null, FT = opt.t != null ? opt.t : 30, LP = opt.lp, QFIX = opt.q || 0;
+  var SEA0 = '#5cb8ff', SEA1 = '#0a3f9c', LANDC = '#49c97f', COAST = 'rgba(255,255,255,.55)', EDGE = 'rgba(255,255,255,.3)';
+  var CLOUD = 'rgba(255,255,255,.72)', HI = 'rgba(255,230,90,.9)', PIN = '#ff4d5a', RING = '#fff';
+  var FONT = '800 13px Figtree,system-ui,sans-serif', DASH = [6.6, 5.4], NODASH = [];
+
+  function mk(tag, cls, into) { var e = document.createElement(tag); if (cls) e.className = cls; if (into) into.appendChild(e); return e; }
+  function clamp(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+  function ease(k) { return k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; }
+  function back(k) { var c = 1.70158; return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2); }
+  function bounce(k) { var n = 7.5625, d = 2.75; if (k < 1 / d) return n * k * k; if (k < 2 / d) return n * (k -= 1.5 / d) * k + .75; if (k < 2.5 / d) return n * (k -= 2.25 / d) * k + .9375; return n * (k -= 2.625 / d) * k + .984375; }
+  function v3(lon, lat) { var c = Math.cos(lat * D); return [c * Math.cos(lon * D), c * Math.sin(lon * D), Math.sin(lat * D)]; }
+  function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+  function basis(c) { var u = cross(c, Math.abs(c[2]) > .9 ? [1, 0, 0] : [0, 0, 1]), l = Math.sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2]); u = [u[0] / l, u[1] / l, u[2] / l]; return [u, cross(c, u)]; }
+  function now() { return performance.now(); }
+
+  // ---- page parts: glow and shooting star are page layers, the rest is one canvas ----
+  host.classList.add('g-host');
+  if (FZ) host.classList.add('g-still');
+  var glow = mk('div', 'g-glow', host); mk('i', '', glow);
+  mk('div', 'g-shoot', host);
+  var cv = mk('canvas', 'g-cv', host), ctx = cv.getContext('2d');
+
+  // ---- state ----
+  var W = 0, H = 0, q = 0, cx = 0, cy = 0, cyN = 0, R = 1;
+  var m0 = 0, m1 = 0, m3 = 0, m4 = 0, m5 = 0, m6 = 0, m7 = 0, m8 = 1;       // view matrix (the third value of row one is always 0)
+  var lon0 = opt.view ? opt.view[0] : 20, lat0 = opt.view ? opt.view[1] : 24, zoom = 1;
+  var vx = 0, vy = 0, fly = null, drag = null, ptrs = {}, pinch = 0, idleAt = 0, wheelAt = -1e9, actAt = -1e9;
+  var t0 = now(), tt = 0, TL = FZ ? 0 : .9, actT = 0, pauseAt = 0;
+  var LAND = null, LST = null, BORD = null, CTRY = null, CNAMES = [], loaded = false, decodeMs = 0;
+  var PINS = [], ARCS = [], DOT = new Float32Array(0), sel = -1, hi = null;
+  var raf = 0, on = false, dirty = true, lastDraw = 0, draws = 0, first = false, ready = false, nA = 0, nB = 0;
+  var seaG = null, sgx = -1, sgy = -1, sgr = -1, ga = -1, gx = -1, gy = -1, gr = -1;
+  var QL = [1], lv = [0, 0], lock = [0, 0], hold = [30000, 30000], tr = [0, 0], from = [0, 0], pa = [0, 0], good = [0, 0], mAct = -1, acc = 0, cnt = 0, skip = 0;
+  var C28 = new Float32Array(29), S28 = new Float32Array(29);
+  (function () { for (var i = 0; i < 29; i++) { C28[i] = Math.cos(TAU * i / 28); S28[i] = Math.sin(TAU * i / 28); } })();
+
+  // ---- stars and clouds: the same seeded numbers every time ----
+  var seed = 7, STG = [[], [], [], [], [], []], NCL = 54, CLP = 14, CLD = new Float32Array(NCL * CLP * 3), CLC = new Float32Array(NCL * 3);
+  function rnd() { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; }
+  (function () {
+    var i, k, a, b, c, d, n = 0, v, bs, rho, cr, sr, j, an, ca, sa, o;
+    for (i = 0; i < 130; i++) { a = rnd(); b = rnd(); c = rnd() * 1.2 + .3; d = rnd() * TAU; STG[Math.min(5, Math.floor((d % PI) / (PI / 6)))].push(a, b, c); }
+    for (i = 0; i < 18; i++) {
+      a = rnd() * 360 - 180; b = rnd() * 100 - 50;
+      for (k = 0; k < 3; k++) {
+        v = v3(a + k * 4.5 + rnd() * 2, b + rnd() * 3 - 1.5); rho = (2.5 + rnd() * 3.5) * D;
+        bs = basis(v); cr = Math.cos(rho); sr = Math.sin(rho);
+        CLC[n * 3] = v[0]; CLC[n * 3 + 1] = v[1]; CLC[n * 3 + 2] = v[2];
+        for (j = 0; j < CLP; j++) {
+          an = TAU * j / CLP; ca = Math.cos(an) * sr; sa = Math.sin(an) * sr; o = (n * CLP + j) * 3;
+          CLD[o] = v[0] * cr + bs[0][0] * ca + bs[1][0] * sa; CLD[o + 1] = v[1] * cr + bs[0][1] * ca + bs[1][1] * sa; CLD[o + 2] = v[2] * cr + bs[0][2] * ca + bs[1][2] * sa;
+        }
+        n++;
+      }
+    }
+  })();
+
+  // ---- light: one small picture holds the shine, the edge shade and the night side ----
+  var SPN = 128, SPR = 61, spr = mk('canvas'), sctx, sImg, SI, SX, SY, SZ, SA, SP, SM, sunV = null, sunAt = -1e9, lit = false, litX = 0, litY = 0, litZ = 0;
+  (function () {
+    var c = SPN / 2, lim = SPR + 1.2, fx = c - .42 * SPR, fy = c - .46 * SPR, r0 = .1 * SPR, dr = 1.02 * SPR - r0;
+    var ex = c - fx, ey = c - fy, qa = ex * ex + ey * ey - dr * dr, pass, i, j, n = 0, dx, dy, d2, px, py, qb, qc, t, al;
+    spr.width = spr.height = SPN; sctx = spr.getContext('2d'); sImg = sctx.createImageData(SPN, SPN);
+    for (pass = 0; pass < 2; pass++) {
+      if (pass) { SI = new Int32Array(n); SX = new Float32Array(n); SY = new Float32Array(n); SZ = new Float32Array(n); SA = new Float32Array(n); SP = new Float32Array(n); SM = new Float32Array(n); n = 0; }
+      for (j = 0; j < SPN; j++) for (i = 0; i < SPN; i++) {
+        dx = i + .5 - c; dy = j + .5 - c; d2 = dx * dx + dy * dy; if (d2 > lim * lim) continue;
+        if (pass) {
+          // The same shine and edge shade as before, worked out with a formula (no reading back from a canvas).
+          px = i + .5 - fx; py = j + .5 - fy; qb = px * ex + py * ey + r0 * dr; qc = px * px + py * py - r0 * r0;
+          t = clamp((qb - Math.sqrt(Math.max(0, qb * qb - qa * qc))) / qa);
+          al = t < .55 ? .22 * (1 - t / .55) : t > .56 ? .5 * (t - .56) / .44 : 0;
+          SI[n] = (j * SPN + i) * 4; SX[n] = dx / SPR; SY[n] = -dy / SPR; SZ[n] = d2 < SPR * SPR ? Math.sqrt(1 - d2 / (SPR * SPR)) : 0;
+          SA[n] = al; SP[n] = t < .55 ? 255 * al : 0; SM[n] = 255 * clamp((lim - Math.sqrt(d2)) / .6);
+        }
+        n++;
+      }
+    }
+  })();
+  function sun() { var d = new Date(), day = (d - Date.UTC(d.getUTCFullYear(), 0, 0)) / 864e5; return v3(-15 * (d.getUTCHours() + d.getUTCMinutes() / 60 - 12), -23.44 * Math.cos(TAU * (day + 10) / 365)); }
+  function light(t) {
+    var ax, ay, az, d, i, n, k, u, nn, sa, ia, oa, p;
+    if (t - sunAt > 60000) { sunAt = t; sunV = opt.sun ? v3(opt.sun[0], opt.sun[1]) : sun(); }
+    // The point on the globe that is farthest from the sun, as seen from the camera.
+    ax = -(m0 * sunV[0] + m1 * sunV[1]); ay = -(m3 * sunV[0] + m4 * sunV[1] + m5 * sunV[2]); az = -(m6 * sunV[0] + m7 * sunV[1] + m8 * sunV[2]);
+    if (lit && ax * litX + ay * litY + az * litZ > .999976) return;      // it moved less than half a degree: keep the old picture
+    lit = true;
+    litX = ax; litY = ay; litZ = az; d = sImg.data; n = SI.length;
+    for (i = 0; i < n; i++) {
+      u = (ax * SX[i] + ay * SY[i] + az * SZ[i] + .035) / .377;
+      nn = u <= 0 ? 0 : u >= 1 ? .463 : .463 * u * u * (3 - 2 * u);
+      sa = SA[i]; ia = 1 - sa; oa = sa + nn * ia; k = SI[i];
+      if (oa < .002) { d[k + 3] = 0; continue; }
+      p = SP[i];
+      d[k] = p / oa; d[k + 1] = (p + 6 * nn * ia) / oa; d[k + 2] = (p + 30 * nn * ia) / oa; d[k + 3] = oa * SM[i];
+    }
+    sctx.putImageData(sImg, 0, 0);
+  }
+
+  // ---- world data ----
+  function capOf(fs) {
+    var x = 0, y = 0, z = 0, i, j, f, l, m = 1, d, r;
+    for (i = 0; i < fs.length; i++) for (f = fs[i], j = 0; j < f.length; j += 3) { x += f[j]; y += f[j + 1]; z += f[j + 2]; }
+    l = Math.sqrt(x * x + y * y + z * z);
+    if (l < 1e-9) return { x: 0, y: 0, z: 1, cr: -1, sr: 0, big: 1 };
+    x /= l; y /= l; z /= l;
+    for (i = 0; i < fs.length; i++) for (f = fs[i], j = 0; j < f.length; j += 3) { d = x * f[j] + y * f[j + 1] + z * f[j + 2]; if (d < m) m = d; }
+    r = Math.acos(m < -1 ? -1 : m) + .5 * D;
+    return { x: x, y: y, z: z, cr: Math.cos(r), sr: Math.sin(r), big: r > 88 * D ? 1 : 0 };
+  }
+  function decode(t) {
+    var sc = t.transform.scale, tl = t.transform.translate, use = {}, lg = t.objects.land;
+    var arcs = t.arcs.map(function (a) { var x = 0, y = 0; return a.map(function (p) { x += p[0]; y += p[1]; return [x * sc[0] + tl[0], y * sc[1] + tl[1]]; }); });
+    function vec(p) { var f = new Float32Array(p.length * 3), i, v; for (i = 0; i < p.length; i++) { v = v3(p[i][0], p[i][1]); f[i * 3] = v[0]; f[i * 3 + 1] = v[1]; f[i * 3 + 2] = v[2]; } return f; }
+    function ring(ids, keep) {
+      var o = [], u = [], f, j, lo, prev = 0, off = 0, A = 0, m = 0, sw;
+      ids.forEach(function (i) { var a = i < 0 ? arcs[~i].slice().reverse() : arcs[i]; for (var k = o.length ? 1 : 0; k < a.length; k++) o.push(a[k]); });
+      for (j = 0; j < o.length; j++) { lo = o[j][0] + off; if (j) { if (lo - prev > 180) { off -= 360; lo -= 360; } else if (lo - prev < -180) { off += 360; lo += 360; } } u.push([lo, o[j][1]]); prev = lo; m += o[j][1]; }
+      for (j = 0; j < u.length - 1; j++) A += u[j][0] * u[j + 1][1] - u[j + 1][0] * u[j][1];
+      sw = u[u.length - 1][0] - u[0][0];
+      f = vec(o); f.pole = Math.abs(sw) > 180 ? (m < 0 ? -1 : 1) : 0;
+      f.s = f.pole ? ((sw > 0) === (f.pole > 0) ? 1 : -1) : (A > 0 ? 1 : -1);
+      if (keep) { if (f.pole) u.push([u[u.length - 1][0], 90 * f.pole], [u[0][0], 90 * f.pole]); f.u = u; }   // a ring round a pole is closed through the pole
+      return f;
+    }
+    function polys(g) { return g.type === 'Polygon' ? [g.arcs] : g.type === 'MultiPolygon' ? g.arcs : []; }
+    LAND = [];
+    (lg.geometries || [lg]).forEach(function (g) { polys(g).forEach(function (pl) { var rs = pl.map(function (r) { return ring(r, false); }), c = capOf([rs[0]]); c.r = rs; LAND.push(c); }); });
+    LST = new Uint8Array(LAND.length);
+    CTRY = {}; CNAMES = [];
+    t.objects.countries.geometries.forEach(function (g) {
+      var rs = [], c, name = g.properties && g.properties.name;
+      polys(g).forEach(function (pl) { pl.forEach(function (r) { rs.push(ring(r, true)); }); });
+      (function walk(a) { if (typeof a === 'number') { var k = a < 0 ? ~a : a; use[k] = (use[k] || 0) + 1; } else a.forEach(walk); })(g.arcs || []);
+      if (!name || !rs.length) return;
+      c = capOf(rs); c.r = rs; CTRY[name] = c; CNAMES.push(name);
+    });
+    BORD = [];
+    Object.keys(use).forEach(function (k) { var f, c; if (use[k] > 1) { f = vec(arcs[k]); c = capOf([f]); f.x = c.x; f.y = c.y; f.z = c.z; f.cr = c.cr; f.sr = c.sr; f.big = c.big; BORD.push(f); } });
+  }
+  function inRing(u, lon, lat) {
+    var j, k, n = u.length, a, b, c = false;
+    for (j = 0, k = n - 1; j < n; k = j++) { a = u[j]; b = u[k]; if ((a[1] > lat) !== (b[1] > lat) && lon < (b[0] - a[0]) * (lat - a[1]) / (b[1] - a[1]) + a[0]) c = !c; }
+    return c;
+  }
+  // The name of the country at a point. Small islands are not in the map data, so a near coast also counts.
+  function countryAt(lon, lat) {
+    var v, i, c, j, u, f, k, d, hit, best = '', bd = .99966;
+    if (!loaded) return '';
+    lon = ((lon + 180) % 360 + 360) % 360 - 180; v = v3(lon, lat);
+    for (i = 0; i < CNAMES.length; i++) {
+      c = CTRY[CNAMES[i]]; if (!c.big && v[0] * c.x + v[1] * c.y + v[2] * c.z < c.cr) continue;
+      for (hit = false, j = 0; j < c.r.length; j++) { u = c.r[j].u; if (inRing(u, lon, lat) || inRing(u, lon + 360, lat) || inRing(u, lon - 360, lat)) hit = !hit; }
+      if (hit) return CNAMES[i];
+    }
+    for (i = 0; i < CNAMES.length; i++) {
+      c = CTRY[CNAMES[i]];
+      for (j = 0; j < c.r.length; j++) for (f = c.r[j], k = 0; k < f.length; k += 3) { d = v[0] * f[k] + v[1] * f[k + 1] + v[2] * f[k + 2]; if (d > bd) { bd = d; best = CNAMES[i]; } }
+    }
+    return best;
+  }
+
+  // ---- drawing ----
+  function setM(lo, la) {
+    var sl = Math.sin(lo * D), cl = Math.cos(lo * D), sp = Math.sin(la * D), cp = Math.cos(la * D);
+    m0 = -sl; m1 = cl; m3 = -sp * cl; m4 = -sp * sl; m5 = cp; m6 = cp * cl; m7 = cp * sl; m8 = sp;
+  }
+  // A closed shape, cut exactly at the edge of the half we can see.
+  // Returns 1 when the centre of the far side is inside the shape (the caller then flips the fill).
+  function crossSeg(x1, y1, x2, y2) { if ((y1 < 0) === (y2 < 0)) return 0; return x1 + (x2 - x1) * (-y1) / (y2 - y1) > 0 ? (y2 > y1 ? 1 : -1) : 0; }
+  function arcSeg(a1, a2) { var d = a2 - a1; if (d > PI) d -= TAU; else if (d <= -PI) d += TAU; if (d > -1e-5 && d < 1e-5) return 0; ctx.arc(cx, cy, R, -a1, -a1 - d, d > 0); return d > 0 ? (a1 < 0 && a1 + d >= 0 ? 1 : 0) : (a1 >= 0 && a1 + d < 0 ? -1 : 0); }
+  function ringPath(f) {
+    var n = f.length / 3, s = f.s || 1, j, k, x, y, z, X, Y, Z, pX = 0, pY = 0, pZ = 0, pA = 0, A = 0, t, iX, iY, l, w = 0;
+    for (j = 0; j <= n; j++) {
+      k = (j % n) * 3; x = f[k]; y = f[k + 1]; z = f[k + 2];
+      X = m0 * x + m1 * y; Y = m3 * x + m4 * y + m5 * z; Z = m6 * x + m7 * y + m8 * z;
+      if (Z < 0) A = Math.atan2(Y, X);
+      if (!j) { if (Z < 0) ctx.moveTo(cx + R * Math.cos(A), cy - R * Math.sin(A)); else ctx.moveTo(cx + R * X, cy - R * Y); }
+      else if (pZ >= 0 && Z >= 0) { w += crossSeg(pX, pY, X, Y); ctx.lineTo(cx + R * X, cy - R * Y); }
+      else if (pZ < 0 && Z < 0) w += arcSeg(pA, A);
+      else {
+        t = pZ / (pZ - Z); iX = pX + t * (X - pX); iY = pY + t * (Y - pY); l = Math.sqrt(iX * iX + iY * iY) || 1; iX /= l; iY /= l;
+        if (Z < 0) { w += crossSeg(pX, pY, iX, iY); ctx.lineTo(cx + R * iX, cy - R * iY); w += arcSeg(Math.atan2(iY, iX), A); }
+        else { w += arcSeg(pA, Math.atan2(iY, iX)); w += crossSeg(iX, iY, X, Y); ctx.lineTo(cx + R * X, cy - R * Y); }
+      }
+      pX = X; pY = Y; pZ = Z; pA = A;
+    }
+    ctx.closePath();
+    return w && (w > 0 ? 1 : -1) !== s ? 1 : 0;
+  }
+  function shape(rs) { var j, fl = 0; ctx.beginPath(); for (j = 0; j < rs.length; j++) fl ^= ringPath(rs[j]); if (fl) { ctx.moveTo(cx + R, cy); ctx.arc(cx, cy, R, 0, TAU); } ctx.fill('evenodd'); }
+  function linePath(f) {
+    var n = f.length, j, x, y, z, pen = false;
+    for (j = 0; j < n; j += 3) {
+      x = f[j]; y = f[j + 1]; z = f[j + 2];
+      if (m6 * x + m7 * y + m8 * z < 0) { pen = false; continue; }
+      if (pen) ctx.lineTo(cx + R * (m0 * x + m1 * y), cy - R * (m3 * x + m4 * y + m5 * z)); else ctx.moveTo(cx + R * (m0 * x + m1 * y), cy - R * (m3 * x + m4 * y + m5 * z));
+      pen = true;
+    }
+  }
+  function sea() {
+    if (cx !== sgx || cy !== sgy || R !== sgr) { sgx = cx; sgy = cy; sgr = R; seaG = ctx.createRadialGradient(cx - R * .35, cy - R * .4, R * .05, cx, cy, R); seaG.addColorStop(0, SEA0); seaG.addColorStop(1, SEA1); }
+    ctx.fillStyle = seaG; ctx.beginPath(); ctx.arc(cx, cy, R + .6, 0, TAU); ctx.fill();
+  }
+  function land() {
+    var n = LAND.length, a0 = R * m0, a1 = R * m1, b0 = -R * m3, b1 = -R * m4, b2 = -R * m5, i, p, zc, s, st, r, f, j, k, fl = 0;
+    nA = nB = 0;
+    // 1. Land that is fully on the near side: plain outlines, no cutting needed.
+    ctx.beginPath();
+    for (i = 0; i < n; i++) {
+      p = LAND[i]; zc = m6 * p.x + m7 * p.y + m8 * p.z;
+      if (p.big) st = 2; else { s = zc * zc < 1 ? Math.sqrt(1 - zc * zc) : 0; st = zc * p.cr - s * p.sr > .01 ? 1 : zc * p.cr + s * p.sr < -.01 ? 0 : 2; }
+      LST[i] = st;
+      if (st !== 1) { if (st) nB++; continue; }
+      nA++;
+      for (r = 0; r < p.r.length; r++) {
+        f = p.r[r]; k = f.length;
+        ctx.moveTo(cx + a0 * f[0] + a1 * f[1], cy + b0 * f[0] + b1 * f[1] + b2 * f[2]);
+        for (j = 3; j < k; j += 3) ctx.lineTo(cx + a0 * f[j] + a1 * f[j + 1], cy + b0 * f[j] + b1 * f[j + 1] + b2 * f[j + 2]);
+        ctx.closePath();
+      }
+    }
+    ctx.fillStyle = LANDC; ctx.fill('evenodd');
+    ctx.strokeStyle = COAST; ctx.lineWidth = .8; ctx.stroke();
+    if (!nB) return;
+    // 2. Land that the edge of the globe cuts through. Land fully on the far side is skipped.
+    ctx.beginPath();
+    for (i = 0; i < n; i++) if (LST[i] === 2) for (p = LAND[i], r = 0; r < p.r.length; r++) fl ^= ringPath(p.r[r]);
+    if (fl) { ctx.moveTo(cx + R, cy); ctx.arc(cx, cy, R, 0, TAU); }
+    ctx.fill('evenodd');
+    ctx.beginPath();
+    for (i = 0; i < n; i++) if (LST[i] === 2) for (p = LAND[i], r = 0; r < p.r.length; r++) linePath(p.r[r]);
+    ctx.stroke();
+  }
+  function borders() {
+    var n = BORD.length, a0 = R * m0, a1 = R * m1, b0 = -R * m3, b1 = -R * m4, b2 = -R * m5, i, f, zc, s, j, k;
+    ctx.beginPath();
+    for (i = 0; i < n; i++) {
+      f = BORD[i];
+      if (!f.big) {
+        zc = m6 * f.x + m7 * f.y + m8 * f.z; s = zc * zc < 1 ? Math.sqrt(1 - zc * zc) : 0;
+        if (zc * f.cr + s * f.sr < -.01) continue;
+        if (zc * f.cr - s * f.sr > .01) {
+          k = f.length; ctx.moveTo(cx + a0 * f[0] + a1 * f[1], cy + b0 * f[0] + b1 * f[1] + b2 * f[2]);
+          for (j = 3; j < k; j += 3) ctx.lineTo(cx + a0 * f[j] + a1 * f[j + 1], cy + b0 * f[j] + b1 * f[j + 1] + b2 * f[j + 2]);
+          continue;
+        }
+      }
+      linePath(f);
+    }
+    ctx.strokeStyle = EDGE; ctx.lineWidth = .7; ctx.stroke();
+  }
+  function clouds(lo) {       // the clouds drift, so they get their own view
+    var sl = Math.sin(lo * D), cl = Math.cos(lo * D), sp = Math.sin(lat0 * D), cp = Math.cos(lat0 * D);
+    var a0 = -R * sl, a1 = R * cl, b0 = R * sp * cl, b1 = R * sp * sl, b2 = -R * cp, c0 = cp * cl, c1 = cp * sl, i, j, k, n = CLP * 3;
+    ctx.beginPath();
+    for (i = 0; i < NCL; i++) {
+      k = i * 3; if (c0 * CLC[k] + c1 * CLC[k + 1] + sp * CLC[k + 2] < .14) continue;
+      k = i * n; ctx.moveTo(cx + a0 * CLD[k] + a1 * CLD[k + 1], cy + b0 * CLD[k] + b1 * CLD[k + 1] + b2 * CLD[k + 2]);
+      for (j = k + 3; j < k + n; j += 3) ctx.lineTo(cx + a0 * CLD[j] + a1 * CLD[j + 1], cy + b0 * CLD[j] + b1 * CLD[j + 1] + b2 * CLD[j + 2]);
+      ctx.closePath();
+    }
+    ctx.fillStyle = CLOUD; ctx.fill();
+  }
+  function stars(hide) {
+    var off = lon0 / 900, lim = hide ? R * 1.02 + 2 : 0, g, s, j, x, y, dx, dy;
+    lim *= lim; ctx.fillStyle = '#fff';
+    for (g = 0; g < 6; g++) {
+      s = STG[g]; ctx.globalAlpha = .3 + .7 * Math.abs(Math.sin(tt * 1.2 + (g + .5) * PI / 6)); ctx.beginPath();
+      for (j = 0; j < s.length; j += 3) {
+        x = s[j] + off; x = (x - Math.floor(x)) * W; y = s[j + 1] * H; dx = x - cx; dy = y - cy;
+        if (dx * dx + dy * dy < lim) continue;
+        ctx.moveTo(x + s[j + 2], y); ctx.arc(x, y, s[j + 2], 0, TAU);
+      }
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  function globe(al, vis, t) {
+    var j, k = R * SPN / 2 / SPR;
+    ctx.globalAlpha = al; ctx.lineJoin = 'bevel';
+    sea(); land(); borders();
+    if (hi) {
+      ctx.fillStyle = HI; ctx.globalAlpha = al * (.7 + .3 * Math.sin(tt * 3)); shape(hi); ctx.globalAlpha = al;
+      ctx.beginPath(); for (j = 0; j < hi.length; j++) linePath(hi[j]); ctx.strokeStyle = COAST; ctx.lineWidth = .8; ctx.stroke();
+    }
+    clouds(vis - tt * 1.4);
+    light(t);
+    ctx.globalCompositeOperation = 'source-atop'; ctx.drawImage(spr, cx - k, cy - k, 2 * k, 2 * k); ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  }
+  function arcBuild() {
+    var j, a, b, d, ang, sn, lift, f, k, t, A, B, o;
+    ARCS = [];
+    for (j = 0; j < PINS.length - 1; j++) {
+      a = PINS[j].v; b = PINS[j + 1].v; d = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+      ang = Math.acos(d > 1 ? 1 : d < -1 ? -1 : d); sn = Math.sin(ang);
+      if (ang < 1e-4 || sn < 1e-4) { ARCS.push(null); continue; }      // the same place twice, or exact opposite sides: no line
+      lift = .05 + .11 * Math.min(1, ang / 2); f = new Float32Array(164);
+      for (k = 0; k <= 40; k++) { t = k / 40; A = Math.sin((1 - t) * ang) / sn; B = Math.sin(t * ang) / sn; o = k * 4; f[o] = A * a[0] + B * b[0]; f[o + 1] = A * a[1] + B * b[1]; f[o + 2] = A * a[2] + B * b[2]; f[o + 3] = 1 + lift * Math.sin(PI * t); }
+      f.at = PINS[j + 1].aat; ARCS.push(f);
+    }
+    if (DOT.length < ARCS.length * 2) DOT = new Float32Array(ARCS.length * 2 + 16);
+  }
+  function arcs() {
+    var R2 = R * R, i, f, qn, n, k, o, x, y, z, h, px, py, dx, dy, pen, any = 0, nd = 0, t, u;
+    ctx.beginPath();
+    for (i = 0; i < ARCS.length; i++) {
+      f = ARCS[i]; if (!f) continue;
+      qn = FZ ? 1 : clamp((tt - f.at) / .9); if (!(qn > 0)) continue;
+      any = 1; pen = false; n = Math.floor(40 * qn);
+      for (k = 0; k <= n; k++) {
+        o = k * 4; x = f[o]; y = f[o + 1]; z = f[o + 2]; h = R * f[o + 3];
+        px = cx + h * (m0 * x + m1 * y); py = cy - h * (m3 * x + m4 * y + m5 * z);
+        if (m6 * x + m7 * y + m8 * z < 0) { dx = px - cx; dy = py - cy; if (dx * dx + dy * dy < R2) { pen = false; continue; } }
+        if (pen) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+        pen = true;
+      }
+      if (qn >= 1) {            // a dot travels along a finished line
+        t = (tt * .2 + i * .31) % 1 * 40; k = Math.floor(t); u = t - k; o = k * 4;
+        x = f[o] + (f[o + 4] - f[o]) * u; y = f[o + 1] + (f[o + 5] - f[o + 1]) * u; z = f[o + 2] + (f[o + 6] - f[o + 2]) * u; h = R * (f[o + 3] + (f[o + 7] - f[o + 3]) * u);
+        px = cx + h * (m0 * x + m1 * y); py = cy - h * (m3 * x + m4 * y + m5 * z); dx = px - cx; dy = py - cy;
+        if (!(m6 * x + m7 * y + m8 * z < 0 && dx * dx + dy * dy < R2)) { DOT[nd++] = px; DOT[nd++] = py; }
+      }
+    }
+    if (!any) return;
+    ctx.lineCap = 'butt'; ctx.strokeStyle = RING; ctx.lineWidth = 1.6; ctx.globalAlpha = .85;
+    ctx.setLineDash(DASH); ctx.lineDashOffset = -tt * 16; ctx.stroke(); ctx.setLineDash(NODASH);
+    if (nd) {
+      ctx.fillStyle = RING;
+      ctx.globalAlpha = .25; ctx.beginPath(); for (i = 0; i < nd; i += 2) { ctx.moveTo(DOT[i] + 7, DOT[i + 1]); ctx.arc(DOT[i], DOT[i + 1], 7, 0, TAU); } ctx.fill();
+      ctx.globalAlpha = 1; ctx.beginPath(); for (i = 0; i < nd; i += 2) { ctx.moveTo(DOT[i] + 3, DOT[i + 1]); ctx.arc(DOT[i], DOT[i + 1], 3, 0, TAU); } ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  function pinOne(p, r) {        // one pin by itself: a pin fading at the edge of the globe, or the chosen pin
+    ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(p.bx, p.by, 4.5, 2.2, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = RING; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(p.bx, p.by); ctx.lineTo(p.hx, p.hy); ctx.stroke();
+    ctx.strokeStyle = PIN; ctx.lineWidth = 2.2; ctx.stroke();
+    ctx.fillStyle = p.b ? RING : PIN; ctx.beginPath(); ctx.arc(p.hx, p.hy, r + 1.3, 0, TAU); ctx.fill();
+    ctx.fillStyle = p.b ? PIN : RING; ctx.beginPath(); ctx.arc(p.hx, p.hy, r - 1.3, 0, TAU); ctx.fill();
+    if (!p.b) { ctx.fillStyle = PIN; ctx.beginPath(); ctx.arc(p.hx, p.hy, r * .36, 0, TAU); ctx.fill(); }
+  }
+  function pinHeads(b, r, col) {  // every pin head of one kind in one go
+    var j, p, any = false;
+    ctx.beginPath();
+    for (j = 0; j < PINS.length; j++) { p = PINS[j]; if (p.st === 1 && !p.b === !b) { ctx.moveTo(p.hx + r, p.hy); ctx.arc(p.hx, p.hy, r, 0, TAU); any = true; } }
+    if (any) { ctx.fillStyle = col; ctx.fill(); }
+  }
+  function pins() {
+    var pinH = .075 / Math.sqrt(zoom), n = PINS.length, j, p, v, age, X, Y, Z, a, hh, r, rq, rho, cr, sr, i, x, y, z, pen, nb = 0, ns = 0, lab = false;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (j = 0; j < n; j++) {
+      p = PINS[j]; p.vis = false; p.st = 0; age = tt - p.at; if (!(age >= 0)) continue;
+      v = p.v; Z = m6 * v[0] + m7 * v[1] + m8 * v[2]; if (Z < -.02) continue;
+      X = m0 * v[0] + m1 * v[1]; Y = m3 * v[0] + m4 * v[1] + m5 * v[2];
+      a = clamp((Z + .02) / .15);
+      hh = 1 + pinH * (1 + 8 * (1 - bounce(Math.min(1, age / .75))));
+      p.bx = cx + R * X; p.by = cy - R * Y; p.hx = cx + R * hh * X; p.hy = cy - R * hh * Y; p.al = a; p.vis = a > .3;
+      if (age > .5 && age < 1.9) {      // a ring spreads on the ground where the pin landed
+        rq = (age - .5) / 1.4; rho = (1.5 + 9 * rq) / zoom * D; cr = Math.cos(rho); sr = Math.sin(rho); pen = false;
+        ctx.beginPath();
+        for (i = 0; i < 29; i++) {
+          x = v[0] * cr + (p.u[0] * C28[i] + p.w[0] * S28[i]) * sr; y = v[1] * cr + (p.u[1] * C28[i] + p.w[1] * S28[i]) * sr; z = v[2] * cr + (p.u[2] * C28[i] + p.w[2] * S28[i]) * sr;
+          if (m6 * x + m7 * y + m8 * z < 0) { pen = false; continue; }
+          if (pen) ctx.lineTo(cx + R * (m0 * x + m1 * y), cy - R * (m3 * x + m4 * y + m5 * z)); else ctx.moveTo(cx + R * (m0 * x + m1 * y), cy - R * (m3 * x + m4 * y + m5 * z));
+          pen = true;
+        }
+        ctx.strokeStyle = PIN; ctx.lineWidth = 2; ctx.globalAlpha = a * (1 - rq); ctx.stroke();
+      }
+      if (j === sel || a < .98) { p.st = 2; ns++; } else { p.st = 1; nb++; }
+    }
+    ctx.globalAlpha = 1;
+    if (nb) {       // pins in full view are drawn together: a few big shapes cost far less than many small ones
+      ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath();
+      for (j = 0; j < n; j++) { p = PINS[j]; if (p.st === 1) { ctx.moveTo(p.bx + 4.5, p.by); ctx.ellipse(p.bx, p.by, 4.5, 2.2, 0, 0, TAU); } }
+      ctx.fill();
+      ctx.beginPath();
+      for (j = 0; j < n; j++) { p = PINS[j]; if (p.st === 1) { ctx.moveTo(p.bx, p.by); ctx.lineTo(p.hx, p.hy); } }
+      ctx.strokeStyle = RING; ctx.lineWidth = 5; ctx.stroke(); ctx.strokeStyle = PIN; ctx.lineWidth = 2.2; ctx.stroke();
+      pinHeads(0, 7.8, PIN); pinHeads(0, 5.2, RING); pinHeads(0, 2.34, PIN);      // places still wished for: a ring with a dot
+      pinHeads(1, 7.8, RING); pinHeads(1, 5.2, PIN);                               // places already visited: a full dot
+    }
+    if (ns) for (i = 0; i < 2; i++) for (j = 0; j < n; j++) {       // pins fading at the edge, then the chosen pin on top
+      p = PINS[j]; if (p.st !== 2 || (j === sel ? 1 : 0) !== i) continue;
+      a = p.al; r = i ? 9 : 6.5;
+      if (i) { ctx.strokeStyle = PIN; ctx.lineWidth = 2; ctx.globalAlpha = a * (.5 + .3 * Math.sin(tt * 4)); ctx.beginPath(); ctx.arc(p.hx, p.hy, r + 7 + 3 * Math.sin(tt * 4), 0, TAU); ctx.stroke(); }
+      ctx.globalAlpha = a; pinOne(p, r);
+    }
+    for (j = 0; j < n; j++) {
+      p = PINS[j]; if (!p.st || !p.n || !(j === sel || zoom > 1.6 && p.al > .95)) continue;
+      if (!lab) { ctx.font = FONT; lab = true; }
+      r = j === sel ? 9 : 6.5; ctx.globalAlpha = p.al;
+      ctx.lineWidth = 4; ctx.strokeStyle = RING; ctx.strokeText(p.n, p.hx + r + 6, p.hy + 4); ctx.fillStyle = PIN; ctx.fillText(p.n, p.hx + r + 6, p.hy + 4);
+    }
+    ctx.globalAlpha = 1;
+  }
+  function glowSet(a) {
+    if (a === ga && cx === gx && cy === gy && R === gr) return;
+    ga = a; gx = cx; gy = cy; gr = R;
+    glow.style.opacity = a;
+    glow.style.transform = 'translate3d(' + cx.toFixed(1) + 'px,' + cy.toFixed(1) + 'px,0) scale(' + (R * 1.34 / 150).toFixed(4) + ')';
+  }
+
+  // ---- sharpness that fits the phone: a softer picture when the phone cannot keep up ----
+  function tune(t, per, m) {
+    var avg, goal, last = QL.length - 1;
+    if (last < 1 || draws < 8) return;
+    if (m !== mAct) { mAct = m; acc = cnt = 0; skip = 2; return; }
+    if (per > 250) { acc = cnt = 0; return; }
+    if (skip) { skip--; return; }
+    acc += per; if (++cnt < 24) return;
+    avg = acc / cnt; acc = cnt = 0; goal = m ? 16.7 : 33.4;
+    if (tr[m] === 1) {              // a sharper picture was just tried
+      tr[m] = 0;
+      if (avg > goal * 1.35) { lv[m]++; lock[m] = t + hold[m]; hold[m] = Math.min(hold[m] * 2, 300000); return; }
+      hold[m] = 30000;
+    }
+    if (t < lock[m]) return;
+    if (avg > goal * 1.35) {
+      good[m] = 0;
+      if (!tr[m]) { tr[m] = 2; from[m] = lv[m]; pa[m] = avg; }
+      if (lv[m] < last) lv[m]++;
+      else { if (avg > pa[m] * .8) lv[m] = from[m]; tr[m] = 0; lock[m] = t + 300000; }      // softer did not help: go back to sharp
+    } else {
+      tr[m] = 0;
+      if (avg < goal * 1.12) { if (++good[m] >= 3 && lv[m] > (m ? lv[0] : 0)) { lv[m]--; tr[m] = 1; good[m] = 0; } }
+      else good[m] = 0;
+    }
+    if (lv[1] < lv[0]) lv[1] = lv[0];
+  }
+  function size() {
+    var r = host.getBoundingClientRect(), dq = Math.min(2, window.devicePixelRatio || 1);
+    W = r.width; H = r.height; if (!W || !H) { W = 0; return; }
+    QL = [];
+    if (QFIX) QL.push(QFIX); else [1, .75, .625, .5].forEach(function (f) { var v = Math.max(1, dq * f); if (QL.indexOf(v) < 0) QL.push(v); });
+    lv[0] = Math.min(lv[0], QL.length - 1); lv[1] = Math.min(lv[1], QL.length - 1);
+    q = 0; sgr = gr = -1; cyN = 0;
+    host.style.setProperty('--gw', W + 'px'); host.style.setProperty('--gh', H + 'px');
+  }
+
+  // ---- one picture ----
+  function frame(t) {
+    var busy, m, dt, lp, k, e, s, vis, al, nq, per;
+    raf = on ? requestAnimationFrame(frame) : 0;
+    if (!W) { size(); if (!W) return; }
+    tt = FZ ? FT : (t - t0) / 1000;
+    lp = !loaded ? 0 : LP != null ? LP : TL ? clamp(tt / TL) : 1;
+    k = H * (sel >= 0 ? .3 : .46);
+    busy = !!(drag || pinch || fly || Math.abs(vx) + Math.abs(vy) > .5 || t - wheelAt < 250 || (loaded && !FZ && (lp < 1 || tt < actT)) || (cyN && Math.abs(cyN - k) > .5));
+    if (busy) actAt = t;
+    m = t - actAt < 250 ? 1 : 0;
+    // Moving things get up to 60 pictures a second. The quiet spin gets 30. With motion turned off, only changes are drawn.
+    if (FZ ? !(dirty || busy) : (!dirty && t - lastDraw < (m ? 10 : 31))) return;
+    dt = Math.min(.05, Math.max(0, (t - lastDraw) / 1000));
+    if (fly) {
+      e = FZ ? 1 : clamp((t - fly.s) / fly.d); s = ease(e);
+      lon0 = fly.a[0] + fly.dl * s; lat0 = fly.a[1] + (fly.b[1] - fly.a[1]) * s; zoom = fly.a[2] + (fly.b[2] - fly.a[2]) * s - fly.hop * Math.sin(PI * e);
+      if (e >= 1) fly = null;
+    } else if (!drag && !pinch) {
+      if (Math.abs(vx) + Math.abs(vy) > .5) { lon0 -= vx * dt; lat0 = Math.max(-80, Math.min(80, lat0 + vy * dt)); s = Math.pow(.04, dt); vx *= s; vy *= s; }
+      else if (sel < 0 && !FZ && lp >= 1 && t - idleAt > 2500) lon0 += dt * 5;
+    }
+    cx = W / 2;
+    cyN = FZ || !cyN || Math.abs(cyN - k) <= .5 ? k : cyN + (k - cyN) * Math.min(1, dt * 6); cy = cyN;
+    s = Math.min(W, H * .78) * .43 * zoom; R = s; vis = lon0; al = 1;
+    if (lp < 1) { R = s * (.15 + .85 * back(lp)); vis = lon0 + (1 - lp) * (1 - lp) * 300; al = clamp(lp * 3); }
+    nq = QL[lv[m]];
+    if (nq !== q) { q = nq; cv.width = Math.round(W * q); cv.height = Math.round(H * q); skip = 2; }
+    ctx.setTransform(q, 0, 0, q, 0, 0); ctx.clearRect(0, 0, W, H);
+    stars(loaded && al >= 1);
+    if (loaded && al > 0) {
+      setM(vis, lat0); globe(al, vis, t);
+      if (lp >= 1) { arcs(); pins(); }
+    }
+    glowSet(loaded ? al : 0);
+    per = t - lastDraw; lastDraw = t; dirty = false; draws++;
+    if (!FZ) tune(t, per, m);
+    if (loaded && al > 0 && !first) { first = true; if (cb.first) cb.first(); }
+    if (loaded && lp >= 1 && !ready) { ready = true; if (cb.ready) cb.ready(); }
+  }
+
+  // ---- moving the view ----
+  function flyTo(lon, lat, z) {
+    var dl = ((lon - lon0) % 360 + 540) % 360 - 180;
+    fly = { a: [lon0, lat0, zoom], b: [lon, lat, z], dl: dl, s: now(), d: 1500, hop: Math.min(zoom, z) * .3 * Math.min(1, (Math.abs(dl) + Math.abs(lat - lat0)) / 70) };
+    vx = vy = 0; dirty = true;
+  }
+  function ringsAt(lon, lat) { var n = countryAt(lon, lat); return n ? CTRY[n].r : null; }
+  function select(i) {
+    var p = PINS[i];
+    if (i >= 0 && p) { sel = i; hi = ringsAt(p.lon, p.lat); flyTo(p.lon, p.lat, Math.max(1.9, Math.min(zoom, 3))); }
+    else { if (sel >= 0) flyTo(lon0, lat0, 1); sel = -1; hi = null; idleAt = now(); }
+    dirty = true;
+  }
+  function stamp(delay) {       // new pins get the moment they drop
+    var n = PINS.length, st = Math.min(.08, 1.2 / Math.max(1, n)), ga2 = Math.min(.3, 2 / Math.max(1, n)), i, p, k = 0;
+    for (i = 0; i < n; i++) {
+      p = PINS[i]; if (p.at === p.at) continue;
+      if (FZ) p.at = p.aat = -1e3;
+      else if (!loaded) continue;
+      else if (tt < TL) { p.at = TL + .15 + i * st; p.aat = TL + .65 + n * st + i * ga2; }
+      else { p.at = tt + (delay || 0) + k++ * .08; p.aat = p.at + .6; }
+      actT = Math.max(actT, p.at + 1.9, p.aat + .9);
+    }
+  }
+  function setPins(list, delay) {
+    var old = {}, id = sel >= 0 && PINS[sel] ? PINS[sel].id : null;
+    PINS.forEach(function (p) { old[p.id] = p; });
+    sel = -1;
+    PINS = list.map(function (it, i) {
+      var o = old[it.id], v = v3(it.lon, it.lat), b = basis(v);
+      if (id !== null && it.id === id) sel = i;
+      return { id: it.id, lon: it.lon, lat: it.lat, n: it.n || '', b: !!it.b, v: v, u: b[0], w: b[1], at: o ? o.at : NaN, aat: o ? o.aat : NaN, hx: 0, hy: 0, vis: false };
+    });
+    if (sel < 0) hi = null;
+    if (!FZ) tt = (now() - t0) / 1000;
+    stamp(delay); arcBuild(); dirty = true;
+  }
+  function load(world) {
+    var a = now();
+    decode(world); decodeMs = now() - a;
+    loaded = true; t0 = now(); tt = 0; actT = 0;
+    PINS.forEach(function (p) { p.at = p.aat = NaN; });
+    stamp(0); arcBuild();
+    if (sel >= 0 && PINS[sel]) hi = ringsAt(PINS[sel].lon, PINS[sel].lat);
+    dirty = true;
+  }
+  function run(v) {
+    var d;
+    v = !!v; if (v === on) return;
+    on = v; host.classList.toggle('g-off', !v);
+    if (v) { if (pauseAt) { d = now() - pauseAt; pauseAt = 0; t0 += d; if (fly) fly.s += d; idleAt += d; } dirty = true; raf = requestAnimationFrame(frame); }
+    else { cancelAnimationFrame(raf); raf = 0; pauseAt = now(); drag = null; ptrs = {}; pinch = 0; vx = vy = 0; }
+  }
+
+  // ---- fingers and mouse ----
+  function span() { var n = Object.keys(ptrs); return Math.max(1, Math.hypot(ptrs[n[0]][0] - ptrs[n[1]][0], ptrs[n[0]][1] - ptrs[n[1]][1])); }
+  cv.addEventListener('pointerdown', function (e) {
+    var n, t = now();
+    try { cv.setPointerCapture(e.pointerId); } catch (x) {}
+    ptrs[e.pointerId] = [e.clientX, e.clientY]; n = Object.keys(ptrs).length; dirty = true;
+    if (n === 2) { pinch = span() / zoom; drag = null; fly = null; }
+    else if (n === 1) { drag = { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t: t, m: t }; fly = null; vx = vy = 0; }
+  });
+  cv.addEventListener('pointermove', function (e) {
+    var p = ptrs[e.pointerId], dx, dy, t, k;
+    if (!p) return;
+    p[0] = e.clientX; p[1] = e.clientY; dirty = true;
+    if (pinch && Object.keys(ptrs).length === 2) { zoom = Math.max(.7, Math.min(6, span() / pinch)); return; }
+    if (!drag) return;
+    dx = (e.clientX - drag.x) / R / D; dy = (e.clientY - drag.y) / R / D; drag.x = e.clientX; drag.y = e.clientY;
+    t = now(); k = Math.max(.008, (t - drag.m) / 1000); drag.m = t;
+    lon0 -= dx; lat0 = Math.max(-80, Math.min(80, lat0 + dy));
+    vx = Math.max(-720, Math.min(720, .4 * vx + .6 * dx / k)); vy = Math.max(-720, Math.min(720, .4 * vy + .6 * dy / k));
+  });
+  function up(e) {
+    var d = drag, t = now(), r, x, y, sx, sy, sz, j, k, best = -1, bd = 26;
+    delete ptrs[e.pointerId]; pinch = 0; drag = null; idleAt = t; dirty = true;
+    if (!d) return;
+    if (FZ || t - d.m > 90) vx = vy = 0;
+    if (Math.hypot(e.clientX - d.x0, e.clientY - d.y0) > 7 || t - d.t > 400) return;
+    vx = vy = 0;
+    if (!cb.tap) return;
+    r = cv.getBoundingClientRect(); x = e.clientX - r.left; y = e.clientY - r.top;
+    for (j = 0; j < PINS.length; j++) { k = Math.hypot(PINS[j].hx - x, PINS[j].hy - y); if (PINS[j].vis && k < bd) { bd = k; best = j; } }
+    if (best >= 0) { cb.tap(best, PINS[best].lon, PINS[best].lat); return; }
+    sx = (x - cx) / R; sy = -(y - cy) / R;
+    if (!loaded || sx * sx + sy * sy >= 1) { cb.tap(-1, null, null); return; }
+    sz = Math.sqrt(1 - sx * sx - sy * sy);
+    cb.tap(-1, Math.atan2(m1 * sx + m4 * sy + m7 * sz, m0 * sx + m3 * sy + m6 * sz) / D, Math.asin(Math.max(-1, Math.min(1, m5 * sy + m8 * sz))) / D);
+  }
+  cv.addEventListener('pointerup', up);
+  cv.addEventListener('pointercancel', function (e) { delete ptrs[e.pointerId]; drag = null; pinch = 0; });
+  cv.addEventListener('wheel', function (e) { e.preventDefault(); zoom = Math.max(.7, Math.min(6, zoom * Math.exp(-e.deltaY * .0015))); wheelAt = idleAt = now(); fly = null; dirty = true; }, { passive: false });
+  function onSize() { W = 0; dirty = true; }
+  window.addEventListener('resize', onSize);
+  if (window.ResizeObserver) new ResizeObserver(onSize).observe(host);
+
+  return {
+    load: load, pins: setPins, select: select, fly: flyTo, run: run, resize: onSize, countryAt: countryAt,
+    view: function () { return { lon: lon0, lat: lat0, zoom: zoom }; },
+    stats: function () { return { draws: draws, q: q, levels: QL.slice(), level: lv.slice(), decodeMs: decodeMs, front: nA, cut: nB, land: LAND ? LAND.length : 0, borders: BORD ? BORD.length : 0 }; }
+  };
+}
+/* ==== GLOBE ENGINE END ==== */
+  /* ==== travel map ==== */
+  // Pins are notebook items of kind 4: { id, k: 4, a, t, lon, lat, x: name, s: 1 want to go | 2 been there }.
+  // The world shapes come from this page's own address. Wikipedia is asked only after a tap or a search,
+  // only for a place (never a name or a message), without cookies and without the page address.
+  var MP_MAX = 150, MP_WIKI = 'https://en.wikipedia.org/w/api.php?action=query&', MP_PIC = 'https://upload.wikimedia.org/';
+  var mpG = null, mpOpen = false, mpWorld = null, mpWorldP = null, mpLoaded = false, mpPins = [], mpCur = null, mpNear = {}, mpQT = 0, mpQN = 0;
+  function mpR4(v) { return Math.round(v * 1e4) / 1e4; }
+  function mpCut(s, n) { s = String(s).replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+  function mpPos(lat, lon) { return Math.abs(lat).toFixed(2) + (lat < 0 ? ' S, ' : ' N, ') + Math.abs(lon).toFixed(2) + (lon < 0 ? ' W' : ' E'); }
+  function mpKm(la1, lo1, la2, lo2) {
+    var r = Math.PI / 180, a = Math.sin((la2 - la1) * r / 2), b = Math.sin((lo2 - lo1) * r / 2);
+    return 12742 * Math.asin(Math.min(1, Math.sqrt(a * a + Math.cos(la1 * r) * Math.cos(la2 * r) * b * b)));
+  }
+  function mpDist(km) { return km < 1 ? Math.max(10, Math.round(km * 100) * 10) + ' m' : km < 10 ? km.toFixed(1) + ' km' : Math.round(km) + ' km'; }
+  function mpLand(lon, lat) { return (mpG && mpG.countryAt(lon, lat)) || ''; }
+  function mpWorldGet() {
+    if (mpWorld) return Promise.resolve(mpWorld);
+    if (!mpWorldP) mpWorldP = fetch('map/world.json').then(function (r) {
+      if (!r.ok) throw new Error('map');
+      return r.json();
+    }).then(function (w) {
+      if (!w || !w.objects || !Array.isArray(w.arcs)) throw new Error('map');
+      mpWorld = w; return w;
+    }, function (e) { mpWorldP = null; throw e; });
+    return mpWorldP;
+  }
+  // Called once the chat is open: the world comes quietly a little later, so the map opens fast.
+  function mpSoon() { setTimeout(function () { if (joined && !mpWorld) mpWorldGet().then(null, function () {}); }, 4000); }
+
+  function mpShow() {
+    if (!joined) return;
+    mpOpen = true; $('#map').hidden = false;
+    if (!mpG) mpG = Globe($('#mp-globe'), {
+      first: function () { $('#mp-load').hidden = true; },
+      ready: function () { $('#map').classList.add('mp-go'); },
+      tap: mpTap
+    });
+    mpDraw(); mpG.resize();
+    if (!document.hidden) mpG.run(true);
+    mpStart();
+  }
+  function mpStart() {
+    if (mpLoaded) return;
+    $('#mp-fail').hidden = true; $('#mp-load').hidden = false;
+    mpWorldGet().then(function (w) {
+      if (mpLoaded || !mpG) return;
+      try { mpG.load(w); mpLoaded = true; } catch (e) { mpFail(); }
+    }, mpFail);
+  }
+  function mpFail() { $('#mp-load').hidden = true; $('#mp-fail').hidden = false; }
+  function mpStop() { if (mpG) mpG.run(false); }
+  function mpShut() { mpOpen = false; $('#map').hidden = true; mpResShut(); mpCardShut(); mpStop(); }
+
+  function mpList() {
+    var l = [];
+    nb.forEach(function (it) { if (it.k === 4 && !it.d) l.push(it); });
+    l.sort(function (a, b) { return a.t - b.t || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); });
+    return l;
+  }
+  // Next to every bbDraw(): the pins, the counts and an open card follow the notebook.
+  function mpDraw() {
+    var been = 0, n, p;
+    mpPins = mpList(); n = mpPins.length;
+    mpPins.forEach(function (it) { if (it.s === 2) been++; });
+    $('#mp-count').textContent = n === 1 ? '1 place' : n + ' places';
+    $('#mp-sub').textContent = n ? (n === 1 ? '1 place, ' : n + ' places, ') + been + ' been, ' + (n - been) + ' to go' : 'No places yet.';
+    if (!mpG) return;
+    mpG.pins(mpPins.map(function (it) { return { id: it.id, lon: it.lon, lat: it.lat, n: it.x, b: it.s === 2 }; }));
+    if (mpCur && mpCur.m === 'pin') {
+      p = nb.get(mpCur.id);
+      if (!p || p.d) mpCardShut(); else if (p.t !== mpCur.t) mpPinCard(p.id, false);
+    } else if (mpCur && mpCur.m === 'list') mpListCard();
+  }
+  function mpTap(i, lon, lat) {
+    mpResShut();
+    if (i >= 0) { if (mpPins[i]) mpPinCard(mpPins[i].id, true); return; }
+    if (lon === null || mpCur) { mpCardShut(); return; }
+    mpNewCard(lon, lat, '');
+  }
+
+  /* the card that slides up */
+  function mpCard(cur, title, sub) {
+    var c = $('#mp-card'), top = el('div', 'mp-ctop'), h = el('div', 'mp-ch'), x = el('button', '', 'Close');
+    if (mpCur && mpCur.m === 'pin' && cur.m !== 'pin' && mpG) mpG.select(-1);
+    mpCur = cur; c.textContent = ''; c.scrollTop = 0;
+    c.appendChild(el('span', 'mp-grab'));
+    h.appendChild(el('h3', '', title));
+    if (sub) h.appendChild(el('p', 'mp-csub', sub));
+    x.type = 'button'; x.addEventListener('click', mpCardShut);
+    top.appendChild(h); top.appendChild(x); c.appendChild(top);
+    c.classList.add('up');
+    return c;
+  }
+  function mpCardShut() {
+    if (mpCur && mpCur.m === 'pin' && mpG) mpG.select(-1);
+    mpCur = null; $('#mp-card').classList.remove('up');
+  }
+  function mpBtn(text, cls, fn) { var b = el('button', cls, text); b.type = 'button'; b.addEventListener('click', fn); return b; }
+  function mpOut(a, href) { a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.referrerPolicy = 'no-referrer'; return a; }
+  function mpImg(src, box) {
+    var img = el('img');
+    img.alt = ''; img.setAttribute('referrerpolicy', 'no-referrer'); img.referrerPolicy = 'no-referrer';
+    img.loading = 'lazy'; img.decoding = 'async';
+    img.addEventListener('load', function () { if (box) box.setAttribute('data-ready', ''); });
+    img.addEventListener('error', function () { if (box) box.setAttribute('data-ready', ''); img.remove(); });
+    img.src = src;
+    return img;
+  }
+  // A new pin: the country, a name to keep, and the two choices.
+  function mpNewCard(lon, lat, name) {
+    lon = mpR4(((lon + 540) % 360) - 180); lat = mpR4(Math.max(-90, Math.min(90, lat)));
+    var land = mpLand(lon, lat), c = mpCard({ m: 'new', lon: lon, lat: lat, land: land }, land || 'No country here', mpPos(lat, lon));
+    var f = el('input'), lab = el('label', 'mp-lab', 'Name of the place'), row = el('div', 'mp-btns');
+    f.id = 'mp-name'; f.type = 'text'; f.maxLength = 60; f.autocomplete = 'off'; f.value = name || land || 'My place';
+    lab.htmlFor = 'mp-name';
+    if (!name) f.setAttribute('data-auto', '');
+    f.addEventListener('input', function () { f.removeAttribute('data-auto'); });
+    row.appendChild(mpBtn('I want to go here', 'mp-pri', function () { mpSave(1); }));
+    row.appendChild(mpBtn('I have been here', '', function () { mpSave(2); }));
+    c.appendChild(lab); c.appendChild(f); c.appendChild(row);
+    c.appendChild(el('p', 'mp-say')).setAttribute('role', 'status');
+    mpNearBox(c, lat, lon, f);
+  }
+  function mpSave(s) {
+    var c = mpCur, say = $('#mp-card .mp-say'), mine = 0, name, it;
+    if (!c || c.m !== 'new') return;
+    name = $('#mp-name').value.replace(/\s+/g, ' ').trim().slice(0, 60) || c.land || 'My place';
+    nb.forEach(function (p) { if (p.k === 4 && !p.d && nbMine(p)) mine++; });
+    if (mine >= MP_MAX) { say.textContent = 'You have 150 pins. Remove one first.'; return; }
+    it = { id: rid(10), k: 4, a: me.name, t: 0, lon: c.lon, lat: c.lat, x: name, s: s };
+    nbPut(it);
+    if (nbPack().length > NB_MAX) { nbPut(nbGone(it)); say.textContent = 'Your notebook is full. Remove something first.'; return; }
+    mpPinCard(it.id, true);
+  }
+  // A pin: who put it, want to go or been there, places near it. Only the person who put it can change it.
+  function mpPinCard(id, go) {
+    var p = nb.get(id), i, c, row, ask, gm;
+    if (!p || p.d || p.k !== 4) return;
+    for (i = 0; i < mpPins.length && mpPins[i].id !== id; i++);
+    if (go && mpG) mpG.select(i < mpPins.length ? i : -1);   // the globe flies there
+    c = mpCard({ m: 'pin', id: id, t: p.t }, p.x, (mpLand(p.lon, p.lat) || 'No country here') + ' · ' + mpPos(p.lat, p.lon));
+    c.appendChild(el('span', 'mp-tag' + (p.s === 2 ? ' mp-been' : ''), p.s === 2 ? '✓ Been there' : '♡ Want to go'));
+    c.appendChild(el('p', 'mp-who', nbMine(p) ? 'You put this pin.' : p.a + ' put this pin.'));
+    mpNearBox(c, p.lat, p.lon, null);
+    row = el('div', 'mp-btns');
+    gm = mpOut(el('a', 'mp-pri', 'Open in Google Maps'), 'https://www.google.com/maps/search/?api=1&query=' + p.lat + ',' + p.lon);
+    row.appendChild(gm);
+    if (nbMine(p)) {
+      row.appendChild(mpBtn(p.s === 2 ? 'I want to go here' : 'I have been here', '', function () {
+        nbPut({ id: p.id, k: 4, a: p.a, t: 0, lon: p.lon, lat: p.lat, x: p.x, s: p.s === 2 ? 1 : 2 });
+      }));
+      ask = el('div', 'mp-ask'); ask.hidden = true;
+      ask.appendChild(el('p', '', 'Remove this pin?'));
+      ask.appendChild(el('div', 'mp-btns'));
+      ask.lastChild.appendChild(mpBtn('Yes, remove', 'mp-pri mp-yes', function () { nbPut(nbGone(p)); }));
+      ask.lastChild.appendChild(mpBtn('No', 'mp-no', function () { ask.hidden = true; }));
+      row.appendChild(mpBtn('Remove pin', 'mp-rm', function () { ask.hidden = false; }));
+      c.appendChild(row); c.appendChild(ask);
+    } else {
+      c.appendChild(row);
+      c.appendChild(el('p', 'mp-who', 'Only ' + p.a + ' can change this pin.'));
+    }
+  }
+  function mpListCard() {
+    var c = mpCard({ m: 'list' }, 'Our places', $('#mp-sub').textContent);
+    if (!mpPins.length) c.appendChild(el('p', 'mp-msg', 'No pins yet. Tap the globe to put one.'));
+    mpPins.slice().reverse().forEach(function (p) {
+      var b = mpBtn('', 'mp-r', function () { mpPinCard(p.id, true); }), t = el('span');
+      b.appendChild(el('span', 'mp-dot' + (p.s === 2 ? ' mp-been' : '')));
+      t.appendChild(el('b', '', p.x));
+      t.appendChild(el('small', '', (p.s === 2 ? 'Been there' : 'Want to go') + ' · ' + (nbMine(p) ? 'you' : p.a)));
+      b.appendChild(t); c.appendChild(b);
+    });
+  }
+
+  /* Wikipedia: places near a point, and search. Everything it sends back is checked and shown as plain text. */
+  function mpWiki(q) {
+    return new Promise(function (ok, bad) {
+      var ctl = window.AbortController ? new AbortController() : null, opt = { credentials: 'omit', referrerPolicy: 'no-referrer' };
+      var tm = setTimeout(function () { if (ctl) ctl.abort(); bad(new Error('slow')); }, 8000);
+      if (ctl) opt.signal = ctl.signal;
+      fetch(MP_WIKI + q, opt).then(function (r) {
+        if (!r.ok) throw new Error('wiki');
+        return r.json();
+      }).then(function (j) { clearTimeout(tm); ok(mpClean(j)); }, function (e) { clearTimeout(tm); bad(e); });
+    });
+  }
+  function mpClean(j) {
+    var out = [], pages = j && j.query && j.query.pages, keys, i, p, co, th;
+    if (!pages || typeof pages !== 'object') return out;
+    keys = Object.keys(pages);
+    for (i = 0; i < keys.length && out.length < 20; i++) {
+      p = pages[keys[i]];
+      if (!p || typeof p !== 'object' || typeof p.title !== 'string' || !p.title.trim()) continue;
+      co = Array.isArray(p.coordinates) ? p.coordinates[0] : null;
+      if (!co || typeof co.lat !== 'number' || typeof co.lon !== 'number' || !isFinite(co.lat) || !isFinite(co.lon) ||
+        Math.abs(co.lat) > 90 || Math.abs(co.lon) > 180) continue;
+      th = p.thumbnail && typeof p.thumbnail.source === 'string' ? p.thumbnail.source : '';
+      if (th.length > 600 || th.indexOf(MP_PIC) !== 0) th = '';
+      out.push({ id: int(p.pageid, 1, 1e12) ? p.pageid : 0, t: mpCut(p.title, 80), d: typeof p.description === 'string' ? mpCut(p.description, 120) : '',
+        lat: mpR4(co.lat), lon: mpR4(co.lon), pic: th, i: int(p.index, 0, 1e4) ? p.index : 99 });
+    }
+    return out;
+  }
+  function mpNearBox(c, lat, lon, f) {
+    var row = el('div', 'mp-tiles'), key = lat.toFixed(2) + ',' + lon.toFixed(2), cur = mpCur, i, got;
+    c.appendChild(el('h4', '', 'Places near here'));
+    c.appendChild(row);
+    for (i = 0; i < 3; i++) row.appendChild(el('span', 'mp-tile mp-wait')).appendChild(el('span', 'mp-ph'));
+    got = mpNear[key] ? Promise.resolve(mpNear[key]) : mpWiki('generator=geosearch&ggscoord=' + lat + '|' + lon +
+      '&ggsradius=10000&ggslimit=20&prop=pageimages|coordinates|description&piprop=thumbnail&pithumbsize=400&format=json&origin=*&colimit=20');
+    got.then(function (list) {
+      list.forEach(function (r) { r.km = mpKm(lat, lon, r.lat, r.lon); });
+      list.sort(function (a, b) { return a.km - b.km; });
+      mpNear[key] = list;
+      if (mpCur !== cur) return;
+      row.textContent = '';
+      if (!list.length) row.appendChild(el('p', 'mp-msg', 'No places found near here.'));
+      list.forEach(function (r, n) { row.appendChild(mpTile(r, n)); });
+      if (f && f.hasAttribute('data-auto') && list.length) f.value = list[0].t.slice(0, 60);
+    }, function () {
+      if (mpCur !== cur) return;
+      row.textContent = '';
+      row.appendChild(el('p', 'mp-msg', 'Places could not load. Check the internet. Then try again.'));
+    });
+  }
+  function mpTile(r, n) {
+    var a = r.id ? mpOut(el('a', 'mp-tile'), 'https://en.wikipedia.org/?curid=' + r.id) : el('span', 'mp-tile'), ph = el('span', 'mp-ph');
+    a.style.setProperty('--i', String(Math.min(n, 12)));
+    if (r.pic) ph.appendChild(mpImg(r.pic, ph)); else ph.setAttribute('data-ready', '');
+    a.appendChild(ph); a.appendChild(el('b', '', r.t)); a.appendChild(el('small', '', mpDist(r.km)));
+    return a;
+  }
+  function mpFind(now) {
+    var q = $('#mp-q').value.replace(/\s+/g, ' ').trim().slice(0, 80), box = $('#mp-res'), n;
+    clearTimeout(mpQT);
+    if (q.length < 2) { mpResShut(); return; }
+    if (!now) { mpQT = setTimeout(function () { mpFind(true); }, 600); return; }
+    n = ++mpQN;
+    box.hidden = false; box.textContent = '';
+    box.appendChild(el('p', 'mp-msg', 'Looking for places...'));
+    mpWiki('generator=prefixsearch&gpssearch=' + encodeURIComponent(q) +
+      '&gpslimit=20&prop=coordinates|pageimages|description&piprop=thumbnail&pithumbsize=200&colimit=20&format=json&origin=*').then(function (list) {
+      if (n !== mpQN) return;
+      list.sort(function (a, b) { return a.i - b.i; });
+      box.textContent = '';
+      if (!list.length) box.appendChild(el('p', 'mp-msg', 'No places found. Try another name.'));
+      list.forEach(function (r) { box.appendChild(mpRow(r)); });
+    }, function () {
+      if (n !== mpQN) return;
+      box.textContent = '';
+      box.appendChild(el('p', 'mp-msg', 'Places could not load. Check the internet. Then try again.'));
+    });
+  }
+  function mpRow(r) {
+    var b = mpBtn('', 'mp-r', function () {
+      mpResShut(); $('#mp-q').blur();
+      mpNewCard(r.lon, r.lat, r.t.slice(0, 60));
+      if (mpG) mpG.fly(r.lon, r.lat, 2.2);
+    }), t = el('span');
+    b.appendChild(r.pic ? mpImg(r.pic, null) : el('span', 'mp-ni'));
+    t.appendChild(el('b', '', r.t));
+    if (r.d) t.appendChild(el('small', '', r.d));
+    b.appendChild(t);
+    return b;
+  }
+  function mpResShut() { clearTimeout(mpQT); mpQN++; $('#mp-res').hidden = true; $('#mp-res').textContent = ''; }
+
+  $('#map-btn').addEventListener('click', mpShow);
+  $('#mp-close').addEventListener('click', mpShut);
+  $('#mp-retry').addEventListener('click', mpStart);
+  $('#mp-count').addEventListener('click', function () { mpResShut(); mpListCard(); });
+  $('#mp-q').addEventListener('input', function () { mpFind(false); });
+  $('#mp-q').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); mpFind(true); } else if (e.key === 'Escape') mpResShut();
+  });
+  // Never draw what nobody sees.
+  document.addEventListener('visibilitychange', function () {
+    if (!mpG) return;
+    if (document.hidden) mpG.run(false); else if (mpOpen) { mpG.resize(); mpG.run(true); }
+  });
+  /* ==== travel map end ==== */
   function bbOpenAt(b, c, verse) {
     bbOpen = true; $('#bible').hidden = false;
     bbShow(b, c, verse);
@@ -1249,7 +2278,7 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
   function bbList(body) {
     body.textContent = ''; $('#bb-pick').textContent = 'Choose a book';
     var all = [], n = [0, 0, 0, 0];
-    nb.forEach(function (it) { if (!it.d) { all.push(it); n[0]++; n[it.k]++; } });
+    nb.forEach(function (it) { if (!it.d && it.k < 4) { all.push(it); n[0]++; n[it.k]++; } });
     var tabs = el('div', 'bb-tabs'), names = ['All', 'Bookmarks', 'Highlights', 'Notes'];
     names.forEach(function (w, k) {
       var b = el('button', '', w + ' (' + n[k] + ')'); b.type = 'button'; b.setAttribute('data-tab', String(k));
@@ -1319,7 +2348,7 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
     if (!Array.isArray(vs)) { body.appendChild(el('p', 'bb-msg', 'This chapter is missing.')); return; }
     f.appendChild(el('h2', 'bb-h', BOOKS[b][0] + ' ' + c));
     var items = [];
-    nb.forEach(function (it) { if (!it.d && it.b === b && it.c === c) items.push(it); });
+    nb.forEach(function (it) { if (!it.d && it.k < 4 && it.b === b && it.c === c) items.push(it); });
     items.sort(function (x, y) { return x.t - y.t; });
     var lo = bbSel ? Math.min(bbSel.a, bbSel.b) : 0, hi = bbSel ? Math.max(bbSel.a, bbSel.b) : 0;
     vs.forEach(function (t, i) {
@@ -1986,7 +3015,7 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
     var m = { id: id, ts: ts, name: typeof n === 'string' && n ? n.slice(0, 30) : 'Friend', text: text };
     if (im && typeof im === 'object' && int(im.n, 1, 80) && int(im.z, 1, 720000) && int(im.w, 1, 8192) && int(im.h, 1, 8192) &&
       im.n === Math.ceil(im.z / CHUNK)) m.im = { n: im.n, z: im.z, w: im.w, h: im.h };
-    else if (vn && typeof vn === 'object' && int(vn.n, 1, 80) && int(vn.z, 1, 720000) && int(vn.d, 1, 600) && int(vn.t, 0, VN_TYPES.length - 1) &&
+    else if (vn && typeof vn === 'object' && int(vn.n, 1, 160) && int(vn.z, 1, 1440000) && int(vn.d, 1, 600) && int(vn.t, 0, VN_TYPES.length - 1) &&
       vn.n === Math.ceil(vn.z / CHUNK)) m.vn = { n: vn.n, z: vn.z, d: vn.d, t: vn.t };
     else if (lc === 1) m.lc = 1;                                         // a request for the place
     else if (lc !== undefined && okLoc(lc)) m.lc = okLoc(lc);            // a place
@@ -2576,8 +3605,8 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
     });
   }
   function sendPic(file) {
-    if (!joined || !file || !/^image\//.test(file.type)) return;
-    shrink(file).then(function (r) {
+    if (!joined || !file || !/^image\//.test(file.type)) return Promise.resolve();
+    return shrink(file).then(function (r) {
       if (!joined || covering) return;
       lastTs = Math.max(Date.now(), lastTs + 1);
       var m = { id: rid(14), ts: lastTs, name: me.name, text: 'Photo', im: { n: Math.ceil(r.bytes.length / CHUNK), z: r.bytes.length, w: r.w, h: r.h },
@@ -2591,6 +3620,328 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
     });
   }
   function endPick() { setTimeout(function () { picking = false; if (document.hidden) cover(); }, 800); }
+  /* ---------- photo tray: pick photos inside the chat, take one with the camera, or show the phone's photo folder ---------- */
+  // The photo button opens a tray under the message bar. Ticked photos go one after the other, in tick order.
+  // The camera and the folder are used only when this phone has them. Photos from the folder are never kept:
+  // only the folder handle is kept (in its own database), and the little pictures go when the tray closes.
+  var TRAY_MAX = 6, ROLL_MAX = 60, ROLL_SCAN = 6000, ROLL_EXT = /\.(jpe?g|png|webp|gif|avif)$/i;
+  var TRAY_HINT = 'Tap the photos you want to send.';
+  var CAM_SVG = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+  var PICK_SVG = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 17 5-5 4 4 3-3 4 4"/></svg>';
+  var tray = { open: false, gen: 0, items: [], ticks: [], urls: [], queue: [], busy: 0, noteT: 0, dir: null };
+  var cam = { stream: null, face: 'environment', blob: null, url: '', gen: 0 };
+  function hasCam() { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); }
+  function hasRoll() { return 'showDirectoryPicker' in window; }
+  function trayOpen() {
+    if (!joined || covering || tray.open) return;
+    var box = $('#messages'), end = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+    $('#feel-row').hidden = true; $('#feel-btn').setAttribute('aria-expanded', 'false');
+    $('#text').blur();
+    tray.open = true; tray.gen++;
+    $('#tray').hidden = false; $('#attach').setAttribute('aria-expanded', 'true');
+    trayDraw(); rollShow(tray.gen);
+    if (end) { box.scrollTop = box.scrollHeight; setTimeout(function () { box.scrollTop = box.scrollHeight; }, 320); }
+  }
+  function trayClose() {
+    if (!tray.open) return;
+    tray.open = false; tray.gen++;
+    tray.queue = []; tray.busy = 0; tray.items = []; tray.ticks = []; tray.dir = null;
+    tray.urls.forEach(function (u) { URL.revokeObjectURL(u); }); tray.urls = [];
+    clearTimeout(tray.noteT);
+    $('#tray-grid').textContent = ''; $('#tray').hidden = true; $('#tray-send').hidden = true;
+    $('#tray-hint').textContent = TRAY_HINT; $('#tray-hint').removeAttribute('data-warn');
+    $('#attach').setAttribute('aria-expanded', 'false');
+  }
+  // cover() and Leave: the camera must not stay on. A blur while the browser asks "allow the camera?" is not looking away.
+  function trayAway(force) {
+    if (picking && !force) return;
+    camClose(); trayClose();
+  }
+  function trayTool(id, label, svg, i) {
+    var b = el('button', 'tile tile-tool'); b.type = 'button'; b.id = id;
+    b.innerHTML = svg; b.appendChild(el('span', '', label)); b.style.setProperty('--i', String(i));
+    return b;
+  }
+  function trayDraw() {
+    var grid = $('#tray-grid'), n = 0;
+    grid.textContent = '';
+    if (hasCam()) grid.appendChild(trayTool('tray-cam', 'Camera', CAM_SVG, n++));
+    grid.appendChild(trayTool('tray-pick', 'Choose photos', PICK_SVG, n++));
+    trayMarks();
+  }
+  function trayTile(it, i) {
+    var b = el('button', 'tile tile-photo'), t = el('span', 'tick');
+    b.type = 'button'; b.setAttribute('aria-pressed', 'false'); t.setAttribute('aria-hidden', 'true');
+    b.appendChild(t); b.style.setProperty('--i', String(Math.min(i, 14)));
+    it.tile = b;
+    return b;
+  }
+  // Numbers on the ticks, labels "Photo 1", "Photo 2"... in grid order, and the send button.
+  function trayMarks() {
+    tray.items.forEach(function (it, i) {
+      var k = tray.ticks.indexOf(it), b = it.tile;
+      b.setAttribute('aria-label', 'Photo ' + (i + 1));
+      b.setAttribute('aria-pressed', k >= 0 ? 'true' : 'false');
+      b.firstChild.textContent = k >= 0 ? String(k + 1) : '';
+    });
+    var n = tray.ticks.length, s = $('#tray-send');
+    s.hidden = !n; s.textContent = 'Send ' + n + (n === 1 ? ' photo' : ' photos');
+  }
+  function trayNote() {
+    var h = $('#tray-hint');
+    h.textContent = 'You can send ' + TRAY_MAX + ' photos at one time.';
+    h.removeAttribute('data-warn'); void h.offsetWidth; h.setAttribute('data-warn', '');
+    clearTimeout(tray.noteT);
+    tray.noteT = setTimeout(function () { h.textContent = TRAY_HINT; h.removeAttribute('data-warn'); }, 4000);
+  }
+  function trayTick(it) {
+    var k = tray.ticks.indexOf(it);
+    if (k >= 0) tray.ticks.splice(k, 1);
+    else if (tray.ticks.length >= TRAY_MAX) { trayNote(); return; }
+    else tray.ticks.push(it);
+    trayMarks();
+  }
+  // Photos from the system picker go to the front of the grid, ticked.
+  function trayAdd(files) {
+    var grid = $('#tray-grid'), at = grid.querySelector('.tile-photo, .tray-card'), fresh = [], over = false;
+    files.forEach(function (f, i) {
+      var it = { file: f, fh: null, tile: null };
+      grid.insertBefore(trayTile(it, i), at);
+      fresh.push(it);
+    });
+    tray.items = fresh.concat(tray.items);
+    fresh.forEach(function (it) { if (tray.ticks.length < TRAY_MAX) tray.ticks.push(it); else over = true; });
+    trayMarks(); if (over) trayNote();
+    fresh.forEach(thumbQ);
+    grid.scrollTop = 0;
+  }
+  function traySend() {
+    var list = tray.ticks.map(function (it) { return it.file || it.fh; });
+    if (!list.length) return;
+    trayClose();
+    sendAll(list);
+  }
+  // One after the other, so the other phone gets them in the same order.
+  function sendAll(list) {
+    return list.reduce(function (p, f) {
+      return p.then(function () {
+        if (!joined || covering) return;
+        var got = f && f.getFile && !(f instanceof Blob) ? f.getFile() : Promise.resolve(f);
+        return got.then(sendPic, function () {
+          $('#pic-note').hidden = false; clearTimeout(picNoteT);
+          picNoteT = setTimeout(function () { $('#pic-note').hidden = true; }, 6000);
+        });
+      });
+    }, Promise.resolve());
+  }
+  // Little pictures: 2 at a time. Closing the tray stops the queue and lets go of every one.
+  function thumbQ(it) { tray.queue.push(it); thumbRun(); }
+  function thumbRun() {
+    while (tray.busy < 2 && tray.queue.length) {
+      (function (it, g) {
+        tray.busy++;
+        thumbMake(it, g).then(function (node) {
+          if (node && g === tray.gen && it.tile) it.tile.appendChild(node);
+        }, function () {}).then(function () {
+          if (g !== tray.gen) return;
+          tray.busy--; thumbRun();
+        });
+      })(tray.queue.shift(), tray.gen);
+    }
+  }
+  function thumbMake(it, g) {
+    var got = it.file ? Promise.resolve(it.file) : it.fh.getFile();
+    return got.then(function (f) {
+      if (g !== tray.gen) return null;
+      it.file = f;
+      if (!window.createImageBitmap) return thumbImg(f, g);
+      return createImageBitmap(f, { resizeWidth: 240, resizeQuality: 'low' }).then(function (bm) {
+        if (g !== tray.gen) { bm.close(); return null; }
+        var s = Math.max(1, Math.min(bm.width, bm.height)), c = document.createElement('canvas');
+        c.width = c.height = s;
+        c.getContext('2d').drawImage(bm, (bm.width - s) / 2, (bm.height - s) / 2, s, s, 0, 0, s, s);
+        bm.close();
+        return c;
+      }).catch(function () { return thumbImg(f, g); });
+    });
+  }
+  function thumbImg(f, g) {
+    if (g !== tray.gen) return null;
+    var u = URL.createObjectURL(f), im = new Image();
+    tray.urls.push(u); im.alt = ''; im.decoding = 'async';
+    return new Promise(function (res) {
+      im.onload = function () { res(im); };
+      im.onerror = function () { res(null); };
+      im.src = u;
+    });
+  }
+  /* the camera */
+  function camOpen() {
+    if (!joined || covering || !hasCam()) return;
+    var g = ++cam.gen, p;
+    camStop(); cam.blob = null; camStill('');
+    $('#cam').hidden = false; $('#cam').setAttribute('data-face', cam.face);
+    $('#cam-note').hidden = true; $('#cam-live').hidden = false;
+    picking = true; pickUntil = Date.now() + 60000;   // the browser asks "allow the camera?" and may take the focus
+    try {
+      p = navigator.mediaDevices.getUserMedia({ video: { facingMode: cam.face, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+    } catch (e) { p = Promise.reject(e); }
+    Promise.resolve(p).then(function (s) {
+      endPick();
+      if (g !== cam.gen || $('#cam').hidden) { tracksOff(s); return; }
+      cam.stream = s;
+      var v = $('#cam-video'); v.srcObject = s;
+      var pp = v.play(); if (pp && pp.catch) pp.catch(function () {});
+    }).catch(function () {
+      endPick();
+      if (g !== cam.gen) return;
+      camStop();
+      $('#cam-live').hidden = true; $('#cam-done').hidden = true; $('#cam-note').hidden = false;
+    });
+  }
+  function tracksOff(s) { try { s.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} }
+  function camStop() {
+    var s = cam.stream, v = $('#cam-video');
+    cam.stream = null;
+    if (s) tracksOff(s);
+    if (v.srcObject) { try { tracksOff(v.srcObject); v.pause(); } catch (e) {} v.srcObject = null; }
+  }
+  function camClose() {
+    cam.gen++; camStop(); cam.blob = null; camStill('');
+    $('#cam').hidden = true; $('#cam-note').hidden = true;
+  }
+  function camStill(u) {
+    if (cam.url) URL.revokeObjectURL(cam.url);
+    cam.url = u;
+    var im = $('#cam-still');
+    if (u) { im.src = u; im.hidden = false; } else { im.removeAttribute('src'); im.hidden = true; }
+    $('#cam-live').hidden = !!u; $('#cam-done').hidden = !u;
+  }
+  function camFlip() { cam.face = cam.face === 'user' ? 'environment' : 'user'; camOpen(); }
+  function camShot() {
+    var v = $('#cam-video'), w = v.videoWidth, h = v.videoHeight, g = cam.gen;
+    if (!cam.stream || !w || !h) return;
+    var c = document.createElement('canvas'), x = c.getContext('2d');
+    c.width = w; c.height = h;
+    if (cam.face === 'user') { x.translate(w, 0); x.scale(-1, 1); }   // the front camera shows a mirror: keep the photo the same
+    x.drawImage(v, 0, 0, w, h);
+    var fl = $('#cam-flash'); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
+    c.toBlob(function (b) {
+      if (g !== cam.gen || !b) return;
+      cam.blob = b; camStill(URL.createObjectURL(b));
+    }, 'image/jpeg', 0.92);
+  }
+  function camSend() {
+    var b = cam.blob;
+    if (!b) return;
+    camClose(); trayClose();
+    sendPic(b);
+  }
+  /* the phone's photo folder (Chrome on Android): the folder is picked once, then only asked about on a tap */
+  function rollDo(mode, fn) {
+    return new Promise(function (res, rej) {
+      var over = false, t = setTimeout(function () { over = true; rej(new Error('slow')); }, 6000);
+      var q = indexedDB.open('room-roll', 1);
+      q.onupgradeneeded = function () { q.result.createObjectStore('k'); };
+      q.onerror = function () { clearTimeout(t); rej(q.error); };
+      q.onsuccess = function () {
+        var d = q.result, out;
+        if (over) { d.close(); return; }
+        clearTimeout(t);
+        try {
+          var tx = d.transaction('k', mode), r = fn(tx.objectStore('k'));
+          r.onsuccess = function () { out = r.result; };
+          tx.oncomplete = function () { d.close(); res(out); };
+          tx.onerror = tx.onabort = function () { d.close(); rej(tx.error); };
+        } catch (e) { d.close(); rej(e); }
+      };
+    });
+  }
+  function rollShow(g) {
+    if (!hasRoll()) return;
+    rollDo('readonly', function (s) { return s.get('dir'); }).then(function (h) {
+      if (g !== tray.gen) return;
+      if (!h) { rollCard(null); return; }
+      return Promise.resolve(h.queryPermission ? h.queryPermission({ mode: 'read' }) : 'prompt').then(function (st) {
+        if (g !== tray.gen) return;
+        if (st === 'granted') rollScan(h, g); else rollCard(h);
+      });
+    }).catch(function () { if (g === tray.gen) rollCard(null); });
+  }
+  function rollCard(h, why) {
+    var old = $('#tray-card'), c = el('div', 'tray-card'), b = el('button', '', 'Show my phone photos here');
+    if (old) old.parentNode.removeChild(old);
+    tray.dir = h; c.id = 'tray-card'; b.type = 'button'; b.id = 'tray-roll';
+    c.appendChild(el('p', '', why || (h ? 'Tap the button to see the photos from your phone again.' : 'The photos from your phone can show here. Pick the folder with your photos.')));
+    c.appendChild(b);
+    $('#tray-grid').appendChild(c);
+  }
+  function rollAsk(h) {
+    var g = tray.gen, p;
+    try {
+      if (h && h.requestPermission) {
+        picking = true; pickUntil = Date.now() + 60000;   // the browser asks "allow?" and may take the focus
+        p = h.requestPermission({ mode: 'read' }).then(function (st) {
+          if (st !== 'granted') { var e = new Error('no'); e.name = 'NotAllowedError'; throw e; }
+          return h;
+        });
+      } else {
+        picking = true; pickUntil = Date.now() + 120000;   // the folder picker takes the focus: that is not looking away
+        p = window.showDirectoryPicker({ id: 'room-roll', mode: 'read', startIn: 'pictures' }).then(function (d) {
+          return rollDo('readwrite', function (s) { return s.put(d, 'dir'); }).then(function () { return d; }, function () { return d; });
+        });
+      }
+    } catch (e) { p = Promise.reject(e); }
+    Promise.resolve(p).then(function (d) {
+      endPick();
+      if (g === tray.gen) rollScan(d, g);
+    }, function (e) {
+      endPick();
+      if (g !== tray.gen || (e && e.name === 'AbortError')) return;
+      if (h) rollCard(null, 'The photos could not be opened. Pick the folder again.');
+      else rollCard(null, 'That folder could not be opened. Try another one.');
+    });
+  }
+  // Look in the folder and the folders inside it (2 levels, about 6000 names at most). Newest names first.
+  function rollScan(h, g) {
+    var found = [], seen = 0;
+    function walk(d, depth) {
+      if (!d || !d.values) return Promise.resolve();
+      var it = d.values(), subs = [];
+      function step() {
+        if (seen >= ROLL_SCAN || g !== tray.gen) return Promise.resolve();
+        return it.next().then(function (r) {
+          if (r.done) return;
+          seen++;
+          var e = r.value, n = (e && e.name) || '';
+          if (n.charAt(0) !== '.') {
+            if (e.kind === 'file' && ROLL_EXT.test(n)) found.push(e);
+            else if (e.kind === 'directory' && depth < 1) subs.push(e);
+          }
+          return step();
+        });
+      }
+      return step().then(function () {
+        return subs.reduce(function (q, s) { return q.then(function () { return walk(s, depth + 1); }); }, Promise.resolve());
+      });
+    }
+    walk(h, 0).then(function () {
+      if (g !== tray.gen) return;
+      var old = $('#tray-card'), grid = $('#tray-grid');
+      if (old) old.parentNode.removeChild(old);
+      found.sort(function (a, b) { return a.name < b.name ? 1 : a.name > b.name ? -1 : 0; });
+      found = found.slice(0, ROLL_MAX);
+      if (!found.length) { rollCard(null, 'No photos were found in that folder. Pick another folder.'); return; }
+      var fresh = found.map(function (fh, i) {
+        var it = { file: null, fh: fh, tile: null };
+        grid.appendChild(trayTile(it, i));
+        return it;
+      });
+      tray.items = tray.items.concat(fresh);
+      trayMarks();
+      fresh.forEach(thumbQ);
+    }).catch(function () { if (g === tray.gen) rollCard(null, 'The photos could not be opened. Pick the folder again.'); });
+  }
   /* ---------- kept pieces: the relays hold the bytes until the other phone has them ---------- */
   function keepAll(m) {
     var p = pics.get(m.id);
@@ -2709,11 +4060,11 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
     stopPlay();
     $('#mic').disabled = true;
     picking = true; pickUntil = Date.now() + 60000;   // the browser asks "allow the microphone?" and may take the focus
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (s) {
+    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true, channelCount: 1, sampleRate: 48000 } }).then(function (s) {
       endPick(); $('#mic').disabled = false;
       r.stream = s;
       if (rec !== r || !joined || covering) { micOff(r); return; }   // stopped while the browser was asking
-      var type = recType(), opt = { audioBitsPerSecond: 32000 }, mr;
+      var type = recType(), opt = { audioBitsPerSecond: 64000 }, mr;
       if (type) opt.mimeType = type;
       try { mr = new MediaRecorder(s, opt); } catch (e) { try { mr = new MediaRecorder(s); } catch (e2) { mr = null; } }
       if (!mr) { rec = null; micOff(r); micNote(); return; }
@@ -2761,7 +4112,7 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
     blob.arrayBuffer().then(function (ab) {
       var bytes = new Uint8Array(ab);
       if (!joined || covering) return;
-      if (bytes.length < 100 || bytes.length > 80 * CHUNK) { micNote(); return; }
+      if (bytes.length < 100 || bytes.length > 160 * CHUNK) { micNote(); return; }
       lastTs = Math.max(Date.now(), lastTs + 1);
       var m = { id: rid(14), ts: lastTs, name: me.name, text: 'Voice note',
         vn: { n: Math.ceil(bytes.length / CHUNK), z: bytes.length, d: Math.max(1, Math.min(VN_MAX, Math.round(r.secs))),
@@ -3057,7 +4408,7 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
       if (myName) crypto.subtle.sign('HMAC', pingKey, enc.encode('room-nb-v1:' + myName)).then(function (sig) {
         nbId = hex(sig).slice(0, 24); nbSoon(2000);      // where the relays keep this person's notebook
       }).catch(function () {});
-      nbOpen(); nbLoad();
+      nbOpen(); nbLoad(); mpSoon();
       openStore(); restore();
       job(start);                    // connect once the saved chat is loaded
       setTimeout(start, 9000);       // or after 9 seconds, if the storage is that slow
@@ -3149,6 +4500,7 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
     say('Asked for your location', 1);
   });
   $('#leave').addEventListener('click', function () {
+    trayAway(true);   // the camera goes off and the tray closes
     covering = true;   // leaving on purpose: no cover now, and none after the reload
     $('#chat-screen').hidden = true; flush(); lastKnocks();
     // Leave signs out for real: the kept keys go. The switch stays, so the next sign-in keeps them again.
@@ -3157,6 +4509,7 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
     var go = function () { location.reload(); };
     Promise.all([bye(), forget()]).then(go, go);
     setTimeout(go, 800);
+    mpShut();
   });
 
   $('#composer').addEventListener('submit', function (e) {
@@ -3199,10 +4552,35 @@ button,.pr-chip,.bb-sw button,.bb-tabs button,.pr-nn,.pr-cnt,#feel-pray,.qt-ref{
   $('#feel-btn').addEventListener('mousedown', function (e) { e.preventDefault(); });
   $('#send').addEventListener('mousedown', function (e) { e.preventDefault(); });
 
-  // Photos: pick one, or paste one into the message box.
-  $('#attach').addEventListener('click', function () { picking = true; pickUntil = Date.now() + 120000; $('#file').click(); });
-  $('#file').addEventListener('change', function () { var f = this.files && this.files[0]; this.value = ''; endPick(); if (f) sendPic(f); });
+  // Photos: the photo button opens the tray under the message bar. A photo pasted into the message box goes at once.
+  $('#attach').addEventListener('click', function () { if (tray.open) trayClose(); else trayOpen(); });
+  $('#attach').addEventListener('mousedown', function (e) { e.preventDefault(); });
+  $('#text').addEventListener('focus', trayClose);
+  $('#feel-btn').addEventListener('click', function () { if (!$('#feel-row').hidden) trayClose(); });
+  $('#tray-grid').addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('button') : null;
+    if (!b || !tray.open) return;
+    if (b.id === 'tray-cam') { camOpen(); return; }
+    if (b.id === 'tray-pick') { picking = true; pickUntil = Date.now() + 120000; $('#file').click(); return; }
+    if (b.id === 'tray-roll') { rollAsk(tray.dir); return; }
+    for (var i = 0; i < tray.items.length; i++) if (tray.items[i].tile === b) { trayTick(tray.items[i]); return; }
+  });
+  $('#tray-send').addEventListener('click', traySend);
+  // With the tray open, picked photos wait in the tray. With the tray closed, they go at once.
+  $('#file').addEventListener('change', function () {
+    var l = this.files || [], fs = [];
+    for (var i = 0; i < l.length; i++) if (/^image\//.test(l[i].type)) fs.push(l[i]);
+    this.value = ''; endPick();
+    if (!fs.length) return;
+    if (tray.open) trayAdd(fs); else sendAll(fs);
+  });
   $('#file').addEventListener('cancel', endPick);
+  $('#cam-close').addEventListener('click', camClose);
+  $('#cam-flip').addEventListener('click', camFlip);
+  $('#cam-shot').addEventListener('click', camShot);
+  $('#cam-again').addEventListener('click', function () { cam.blob = null; camStill(''); });
+  $('#cam-send').addEventListener('click', camSend);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) camClose(); });
   $('#mic').addEventListener('click', startRec);
   $('#rec-cancel').addEventListener('click', function () { stopRec(false); });
   $('#rec-send').addEventListener('click', function () { stopRec(true); });
