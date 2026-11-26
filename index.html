@@ -629,6 +629,16 @@ span.mp-chip{display:inline-flex;align-items:center;min-height:44px;padding:0 16
 .mp-say:empty{display:none}
 .mp-ask{margin-top:12px;padding:12px;border:1px solid rgba(255,255,255,.14);border-radius:18px}
 .mp-ask p{margin:0 0 4px;font-weight:700}
+#mp-idea{display:block;width:100%;min-height:64px;padding:10px 16px;border:1px solid rgba(255,255,255,.18);border-radius:16px;background:rgba(255,255,255,.06);color:#fff;font:inherit;font-size:16px;resize:none}
+#mp-idea:focus{outline:0;border-color:#ff4d5a}
+#mp-idea::placeholder{color:#9fb0e6}
+.mp-none{margin:0 0 8px;font-size:15px;color:#a9b8ea}
+.mp-idea{margin:0 0 8px;padding:12px 14px;border:1px solid rgba(255,255,255,.14);border-radius:18px;background:rgba(255,255,255,.05)}
+.mp-idea p{margin:0;font-size:16px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere}
+#map a.mp-link{display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:8px;padding:0 16px;border-radius:99px;background:#fff;color:#0a1634;text-decoration:none;font-weight:700;font-size:15px}
+.mp-ifoot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+.mp-ifoot small{font-size:13px;color:#a9b8ea}
+#map button.mp-irm{min-height:36px;padding:0 12px;font-size:13px;background:none}
 #mp-card h4{margin:18px 0 8px;font-size:12.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#a9b8ea}
 .mp-tiles{display:flex;gap:10px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}
 .mp-tile{flex:none;width:132px;color:#fff;text-decoration:none;animation:mp-in .45s both;animation-delay:calc(var(--i,0)*80ms)}
@@ -1220,6 +1230,12 @@ span.mp-chip{display:inline-flex;align-items:center;min-height:44px;padding:0 16
         typeof e.lat === 'number' && isFinite(e.lat) && e.lat >= -90 && e.lat <= 90 && Math.round(e.lat * 1e4) / 1e4 === e.lat &&
         typeof e.x === 'string' && e.x.length <= 60 && e.x.trim().length > 0;
     }
+    if (e.k === 5) {   // an idea on a pin: words or a link. These fields only.
+      if (typeof e.a !== 'string' || !e.a || e.a.length > 30 || !int(e.t, 1, 1e13)) return false;
+      if (e.d === 1) return Object.keys(e).sort().join() === 'a,d,id,k,t';
+      return Object.keys(e).sort().join() === 'a,id,k,p,t,x' && typeof e.p === 'string' && /^[0-9a-z]{6,20}$/.test(e.p) &&
+        typeof e.x === 'string' && e.x.length <= MP_IDEA && e.x.trim().length > 0;
+    }
     if (!int(e.k, 1, 3) || typeof e.a !== 'string' || !e.a || e.a.length > 30 || !int(e.t, 1, 1e13)) return false;
     if (e.e !== undefined && !int(e.e, 1, 7)) return false;
     if (e.d === 1) return true;
@@ -1236,6 +1252,12 @@ span.mp-chip{display:inline-flex;align-items:center;min-height:44px;padding:0 16
       var p = { id: e.id, k: 4, a: e.a, t: e.t };
       if (e.d === 1) p.d = 1; else { p.lon = e.lon; p.lat = e.lat; p.x = e.x; p.s = e.s; }
       nb.set(p.id, p); return true;
+    }
+    if (e.k === 5 || (cur && cur.k === 5)) {   // an idea: only the person who wrote it can change it
+      if (cur && (cur.k !== e.k || norm(cur.a) !== norm(e.a))) return false;
+      var q = { id: e.id, k: 5, a: e.a, t: e.t };
+      if (e.d === 1) q.d = 1; else { q.p = e.p; q.x = e.x; }
+      nb.set(q.id, q); return true;
     }
     var c = { id: e.id, k: e.k, a: e.a, t: e.t };
     if (e.d === 1) c.d = 1; else { c.b = e.b; c.c = e.c; c.v = e.v; c.w = e.w; if (e.k === 3) c.x = e.x; if (e.e) c.e = e.e; }
@@ -1946,7 +1968,7 @@ function Globe(host, cb, opt) {
   // Pins are notebook items of kind 4: { id, k: 4, a, t, lon, lat, x: name, s: 1 want to go | 2 been there }.
   // The world shapes come from this page's own address. Wikipedia is asked only after a tap or a search,
   // only for a place (never a name or a message), without cookies and without the page address.
-  var MP_MAX = 150, MP_WIKI = 'https://en.wikipedia.org/w/api.php?action=query&', MP_PIC = 'https://upload.wikimedia.org/';
+  var MP_MAX = 150, MP_IDEA = 300, MP_IDEAS = 60, MP_WIKI = 'https://en.wikipedia.org/w/api.php?action=query&', MP_PIC = 'https://upload.wikimedia.org/';
   var mpG = null, mpOpen = false, mpWorld = null, mpWorldP = null, mpLoaded = false, mpPins = [], mpCur = null, mpNear = {}, mpQT = 0, mpQN = 0;
   function mpR4(v) { return Math.round(v * 1e4) / 1e4; }
   function mpCut(s, n) { s = String(s).replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
@@ -2012,7 +2034,7 @@ function Globe(host, cb, opt) {
     mpG.pins(mpPins.map(function (it) { return { id: it.id, lon: it.lon, lat: it.lat, n: it.x, b: it.s === 2 }; }));
     if (mpCur && mpCur.m === 'pin') {
       p = nb.get(mpCur.id);
-      if (!p || p.d) mpCardShut(); else if (p.t !== mpCur.t) mpPinCard(p.id, false);
+      if (!p || p.d) mpCardShut(); else if (p.t !== mpCur.t) mpPinCard(p.id, false); else mpIdeas(p.id);
     } else if (mpCur && mpCur.m === 'list') mpListCard();
   }
   function mpTap(i, lon, lat) {
@@ -2078,13 +2100,14 @@ function Globe(host, cb, opt) {
   }
   // A pin: who put it, want to go or been there, places near it. Only the person who put it can change it.
   function mpPinCard(id, go) {
-    var p = nb.get(id), i, c, row, ask, gm;
+    var p = nb.get(id), i, c, row, ask, gm, old = $('#mp-idea'), keep = old && mpCur && mpCur.m === 'pin' && mpCur.id === id ? old.value : '';
     if (!p || p.d || p.k !== 4) return;
     for (i = 0; i < mpPins.length && mpPins[i].id !== id; i++);
     if (go && mpG) mpG.select(i < mpPins.length ? i : -1);   // the globe flies there
     c = mpCard({ m: 'pin', id: id, t: p.t }, p.x, (mpLand(p.lon, p.lat) || 'No country here') + ' · ' + mpPos(p.lat, p.lon));
     c.appendChild(el('span', 'mp-tag' + (p.s === 2 ? ' mp-been' : ''), p.s === 2 ? '✓ Been there' : '♡ Want to go'));
     c.appendChild(el('p', 'mp-who', nbMine(p) ? 'You put this pin.' : p.a + ' put this pin.'));
+    mpIdeaBox(c, p.id, keep);
     mpNearBox(c, p.lat, p.lon, null);
     row = el('div', 'mp-btns');
     gm = mpOut(el('a', 'mp-pri', 'Open in Google Maps'), 'https://www.google.com/maps/search/?api=1&query=' + p.lat + ',' + p.lon);
@@ -2096,7 +2119,10 @@ function Globe(host, cb, opt) {
       ask = el('div', 'mp-ask'); ask.hidden = true;
       ask.appendChild(el('p', '', 'Remove this pin?'));
       ask.appendChild(el('div', 'mp-btns'));
-      ask.lastChild.appendChild(mpBtn('Yes, remove', 'mp-pri mp-yes', function () { nbPut(nbGone(p)); }));
+      ask.lastChild.appendChild(mpBtn('Yes, remove', 'mp-pri mp-yes', function () {
+        mpIdeaList(p.id).forEach(function (it) { if (nbMine(it)) nbPut(nbGone(it)); });   // my ideas go with my pin
+        nbPut(nbGone(p));
+      }));
       ask.lastChild.appendChild(mpBtn('No', 'mp-no', function () { ask.hidden = true; }));
       row.appendChild(mpBtn('Remove pin', 'mp-rm', function () { ask.hidden = false; }));
       c.appendChild(row); c.appendChild(ask);
@@ -2104,6 +2130,62 @@ function Globe(host, cb, opt) {
       c.appendChild(row);
       c.appendChild(el('p', 'mp-who', 'Only ' + p.a + ' can change this pin.'));
     }
+  }
+  // Ideas on a pin: both people can write what to do there, or paste a link (a TikTok, for example).
+  // An idea is a notebook item of kind 5: { id, k: 5, a, t, p: the pin's id, x: the words }.
+  function mpIdeaList(pin) {
+    var l = [];
+    nb.forEach(function (it) { if (it.k === 5 && !it.d && it.p === pin) l.push(it); });
+    l.sort(function (a, b) { return a.t - b.t || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); });
+    return l;
+  }
+  // The links in some words: only https, at most 3. Each must be a real web address.
+  function mpLinks(text) {
+    var out = [], m = text.match(/https:\/\/[^\s<>"'`]{4,280}/g) || [], i, u;
+    for (i = 0; i < m.length && out.length < 3; i++) {
+      try { u = new URL(m[i].replace(/[.,;:!?)\]]+$/, '')); } catch (e) { continue; }
+      if (u.protocol !== 'https:' || !u.hostname || u.username || u.password) continue;
+      out.push({ href: u.href, host: u.hostname.replace(/^www\./, '') });
+    }
+    return out;
+  }
+  function mpIdeaBox(c, pin, keep) {
+    var lab = el('label', 'mp-lab', 'Ideas for here'), f = el('textarea'), list = el('div'), row = el('div', 'mp-btns'), say = el('p', 'mp-say');
+    list.id = 'mp-ideas';
+    f.id = 'mp-idea'; f.maxLength = MP_IDEA; f.rows = 2; f.value = keep || '';
+    f.placeholder = 'Write what we can do here, or paste a TikTok link';
+    lab.htmlFor = 'mp-idea'; say.id = 'mp-isay'; say.setAttribute('role', 'status');
+    row.appendChild(mpBtn('Add idea', 'mp-pri', function () {
+      var x = f.value.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, MP_IDEA), mine = 0, it;
+      say.textContent = '';
+      if (!x) { say.textContent = 'Write something first.'; return; }
+      nb.forEach(function (o) { if (o.k === 5 && !o.d && nbMine(o)) mine++; });
+      if (mine >= MP_IDEAS) { say.textContent = 'You have ' + MP_IDEAS + ' ideas. Remove one first.'; return; }
+      it = { id: rid(10), k: 5, a: me.name, t: 0, p: pin, x: x };
+      f.value = '';
+      nbPut(it);
+      if (nbPack().length > NB_MAX) { nbPut(nbGone(it)); f.value = x; say.textContent = 'Your notebook is full. Remove something first.'; }
+    }));
+    c.appendChild(lab); c.appendChild(list); c.appendChild(f); c.appendChild(row); c.appendChild(say);
+    mpIdeas(pin);
+  }
+  function mpIdeas(pin) {
+    var box = $('#mp-ideas'), l;
+    if (!box) return;
+    l = mpIdeaList(pin);
+    box.textContent = '';
+    if (!l.length) { box.appendChild(el('p', 'mp-none', 'No ideas yet.')); return; }
+    l.forEach(function (it) {
+      var d = el('div', 'mp-idea'), links = mpLinks(it.x), foot = el('div', 'mp-ifoot');
+      d.appendChild(el('p', '', it.x));
+      links.forEach(function (k) {
+        var tik = /(^|\.)tiktok\.com$/.test(k.host);
+        d.appendChild(mpOut(el('a', 'mp-link', tik ? 'Open TikTok' : 'Open link: ' + k.host.slice(0, 40)), k.href));
+      });
+      foot.appendChild(el('small', '', nbMine(it) ? 'You wrote this.' : it.a + ' wrote this.'));
+      if (nbMine(it)) foot.appendChild(mpBtn('Remove', 'mp-irm', function () { nbPut(nbGone(it)); }));
+      d.appendChild(foot); box.appendChild(d);
+    });
   }
   function mpListCard() {
     var c = mpCard({ m: 'list' }, 'Our places', $('#mp-sub').textContent);

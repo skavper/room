@@ -46,6 +46,7 @@ If the other person is in but you cannot see each other, one of the passwords is
 - **Our travel map.** Tap the globe button at the top of the chat. A 3D globe opens. Tap a place to put a pin, then choose **I want to go here** or **I have been here**. Tap a pin to see it again. **Our places** lists every pin. Lines join the pins in the order they were put.
 - **Shared, and kept.** Pins are saved on the phone and sent to the other person, encrypted, like the Bible notes. Only the person who put a pin can change it or remove it. One person can keep 150 pins.
 - **Places near here.** A pin card shows places near it, with pictures. These come from Wikipedia, and so does **Search a place**. The page asks Wikipedia only after you tap the globe or search. Wikipedia can see which places you look at. It never sees your messages, your names or the password.
+- **Ideas for here.** On a pin, both people can write what to do there, or paste a link (a TikTok, for example). A link opens outside the app. Ideas are saved and sent like pins. Only the person who wrote an idea can remove it. One idea can be 300 letters long, and one person can keep 60 ideas.
 - **Open in Google Maps.** This button opens Google Maps outside the app, at the pin. Google then sees that place.
 - **The world comes with the page.** The country shapes are in [`map/world.json`](map/world.json) on this site. Country shapes: Natural Earth (public domain), packed by world-atlas (ISC licence).
 
